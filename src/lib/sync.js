@@ -1,13 +1,8 @@
-/**
- * Conversa com /api/sync.
- *
- * O aparelho é a fonte da verdade enquanto você treina: tudo continua sendo
- * salvo no localStorage na hora. O sync só leva o que mudou aqui e traz o que
- * mudou lá — se estiver sem sinal ou sem conta, fica pendente e vai na próxima.
- */
+// Conversa com /api/sync. O localStorage é a fonte da verdade; sem sinal ou sem
+// conta, o que mudou fica pendente e vai na próxima.
 
 /** O que ainda não foi enviado. */
-export function pendingChanges(state) {
+function pendingChanges(state) {
   const dirtyOnes = (key) => state[key].filter((r) => state.dirty[key].includes(r.id))
   return {
     plans: dirtyOnes('plans'),
@@ -31,18 +26,14 @@ export function countPending(state) {
   )
 }
 
-/**
- * O pacote de saída e a lista do que ele leva. Marcar como sincronizado apenas
- * o que estava nessa lista faz com que o que você editar durante a requisição
- * continue pendente e vá na próxima rodada.
- */
+/** O pacote de saída e a lista do que ele leva — o que mudar durante a
+ *  requisição fica de fora e vai na próxima. */
 export function buildPush(state) {
   const push = pendingChanges(state)
   return {
     push,
     pushed: {
-      // Guarda o carimbo que foi enviado: se o registro for editado de novo
-      // durante a requisição, dá pra ver que ele mudou e continuar pendente.
+      // O carimbo do envio denuncia edição feita durante a requisição.
       plans: push.plans.map((p) => ({ id: p.id, updatedAt: p.updatedAt })),
       workouts: push.workouts.map((w) => ({ id: w.id, updatedAt: w.updatedAt })),
       jumps: push.jumps.map((j) => ({ id: j.id, updatedAt: j.updatedAt })),
@@ -56,10 +47,7 @@ export function buildPush(state) {
   }
 }
 
-/**
- * Envia o que mudou aqui e recebe o que mudou lá. Quem autentica é o cookie de
- * sessão, que o navegador manda sozinho — nada de segredo passando pelo app.
- */
+/** Envia e recebe. Quem autentica é o cookie de sessão, mandado pelo navegador. */
 export async function runSync(state) {
   const { push, pushed } = buildPush(state)
 
@@ -74,7 +62,7 @@ export async function runSync(state) {
     try {
       detalhe = (await res.json()).error ?? detalhe
     } catch {
-      // Resposta sem JSON (proxy, offline, HTML de erro): fica o status mesmo.
+      // Resposta sem JSON: fica o status mesmo.
     }
     const err = new Error(detalhe)
     err.status = res.status

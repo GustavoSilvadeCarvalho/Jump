@@ -20,7 +20,7 @@ function friendlyError(err) {
   return err?.message ?? 'Falhou.'
 }
 
-/** O aviso que faltava: enquanto não há conta, deixa claro que nada sai daqui. */
+/** Sem conta, deixa claro que nada sai deste aparelho. */
 export function AccountBanner({ account }) {
   if (account.user) return null
   return (

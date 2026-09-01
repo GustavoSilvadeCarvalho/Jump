@@ -15,7 +15,6 @@ dist-ssr
 # Segredos: a URL do Neon mora aqui e nunca vai pro repositorio
 .env
 .env.*
-!.env.example
 
 # Editor directories and files
 .vscode/*

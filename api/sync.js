@@ -1,24 +1,8 @@
-// POST /api/sync — troca de mudanças entre um aparelho e o banco.
+// POST /api/sync — troca de mudanças entre um aparelho e o banco, por conta.
 //
-// Quem está falando vem da sessão (cookie), não de um código no corpo: cada
-// consulta é filtrada pelo dono, então uma conta nunca enxerga a outra.
-//
-// O app manda o que mudou nele e o marco do último sync; devolvemos o que mudou
-// no banco desde então. Vence o mais recente por registro, não pelo conjunto —
-// treinar no celular e mexer numa ficha no computador não faz um sobrescrever
-// o outro.
-//
-// São dois carimbos diferentes, de propósito:
-//
-//   updated_at  relógio do aparelho que editou. Decide quem editou por último.
-//   synced_at   relógio do banco, gravado aqui. É o marco de "o que já baixei".
-//
-// Misturar os dois quebra em silêncio: com o relógio do celular atrasado em
-// relação ao do banco, a edição feita nele entra com carimbo anterior ao marco
-// do outro aparelho e nunca é baixada.
-//
-// Apagar não remove a linha: marca `deleted_at`. Sem isso, o registro apagado
-// num aparelho voltaria do banco no sync seguinte.
+// Dois carimbos, de propósito: updated_at é do relógio do aparelho e decide quem
+// editou por último; synced_at é do relógio do banco e marca o que já foi baixado.
+// Apagar marca deleted_at — sumir com a linha faria o registro voltar no sync seguinte.
 
 import { currentUser } from './_auth.js'
 import { db, fail } from './_db.js'
@@ -87,7 +71,7 @@ async function pushPlans(client, userId, plans) {
         userId,
       ],
     )
-    // rowCount 0 = o banco já tinha uma versão mais nova; não mexe nos exercícios.
+    // rowCount 0 = o banco tinha versão mais nova; não mexe nos exercícios.
     if (rowCount) await replaceItems(client, 'plan_items', 'plan_id', str(plan.id), plan.items)
   }
 }
@@ -96,8 +80,7 @@ async function pushWorkouts(client, userId, workouts) {
   for (const w of workouts) {
     if (!str(w.id) || !isDate(w.date)) continue
     const { rowCount } = await client.query(
-      // O subselect no plan_id evita erro se a ficha ainda não existir aqui:
-      // o treino entra sem vínculo em vez de falhar o sync inteiro.
+      // Ficha ainda não conhecida aqui: entra sem vínculo em vez de derrubar o sync.
       `insert into workouts (id, user_id, date, type, plan_id, duration, rpe, notes, updated_at, synced_at, deleted_at)
        values ($1, $9, $2, $3, (select id from plans where id = $4 and user_id = $9), $5, $6, $7,
                least($8::timestamptz, now()), now(), null)
@@ -148,7 +131,7 @@ async function pushJumps(client, userId, jumps) {
   }
 }
 
-/** Apagado no aparelho: marca a linha como morta se o banco não tiver algo mais novo. */
+/** Só apaga se o banco não tiver algo mais novo. */
 async function pushDeletions(client, userId, table, tombstones) {
   for (const t of tombstones) {
     if (!str(t.id)) continue

@@ -1,9 +1,6 @@
-import { uid } from './storage'
+// Uma linha de exercício, igual na ficha e no treino registrado.
 
-/**
- * Um item é uma linha de exercício — vale tanto pra ficha (o plano) quanto pro
- * treino registrado: nome, séries, repetições ou segundos, carga e descanso.
- */
+import { uid } from './storage'
 
 export const emptyItem = (unit = 'reps') => ({
   key: uid(),
@@ -15,21 +12,18 @@ export const emptyItem = (unit = 'reps') => ({
   unit,
 })
 
-/** Alongamento e mobilidade se medem em segundos — é o padrão da categoria. */
+/** Alongamento e mobilidade contam em segundos por padrão. */
 export function isHoldType(type) {
   return type === 'alongamento' || type === 'mobilidade'
 }
 
-/**
- * A unidade é por exercício: dá pra pedir 30s de pogo jumps num treino de
- * pliometria contado em repetições. Item antigo (sem `unit`) cai no padrão da categoria.
- */
+/** A unidade é por exercício; item antigo cai no padrão da categoria. */
 export function unitOf(item, type) {
   if (item?.unit === 'seg' || item?.unit === 'reps') return item.unit
   return isHoldType(type) ? 'seg' : 'reps'
 }
 
-/** Storage → formulário: os campos voltam como number|null e o input controlado precisa de string. */
+/** Storage → formulário: o input controlado precisa de string, não de number|null. */
 export function toFormItems(items, type) {
   if (!items?.length) return [emptyItem(isHoldType(type) ? 'seg' : 'reps')]
   return items.map((i) => ({
@@ -62,7 +56,7 @@ export function toStoredItems(items) {
 export function restLabel(sec) {
   const n = Number(sec)
   if (!n) return null
-  // Até 2 min a academia conta em segundos ('90s'), acima disso em minutos.
+  // Até 2 min a academia conta em segundos.
   if (n < 120) return n + 's'
   const min = Math.floor(n / 60)
   const rest = n % 60

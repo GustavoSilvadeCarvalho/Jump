@@ -1,7 +1,5 @@
--- Estrutura inicial do Jump.
--- As tabelas espelham o modelo que o app já usa no localStorage: os ids continuam
--- sendo gerados no cliente (text), o que deixa o app funcionar offline e sincronizar
--- depois sem precisar pedir id pro banco.
+-- Estrutura inicial. Os ids são gerados no cliente (text): o app funciona offline
+-- e sincroniza depois, sem precisar pedir id pro banco.
 
 create table if not exists plans (
   id         text primary key,
@@ -27,8 +25,7 @@ create table if not exists workouts (
   updated_at timestamptz not null default now()
 );
 
--- Os exercícios de ficha e de treino têm a mesma forma. `position` guarda a ordem
--- em que aparecem na tela; `unit` diz se `reps` são repetições ou segundos.
+-- position guarda a ordem na tela; unit diz se reps são repetições ou segundos.
 create table if not exists plan_items (
   plan_id  text     not null references plans (id) on delete cascade,
   position smallint not null,
@@ -62,7 +59,7 @@ create table if not exists jumps (
   created_at timestamptz not null default now()
 );
 
--- Preferências do app. Linha única: o `check (id)` impede uma segunda.
+-- Linha única: o check (id) impede uma segunda.
 create table if not exists settings (
   id         boolean primary key default true check (id),
   reach      numeric(5, 1) check (reach > 0),
@@ -77,7 +74,7 @@ create index if not exists workouts_plan_idx        on workouts (plan_id);
 create index if not exists workout_items_name_idx   on workout_items (name);
 create index if not exists jumps_kind_date_idx      on jumps (kind, date);
 
--- `updated_at` confiável, não importa quem escreveu (app, API ou psql na mão).
+-- updated_at confiável, não importa quem escreveu.
 create or replace function touch_updated_at() returns trigger as $$
 begin
   new.updated_at = now();
@@ -97,7 +94,7 @@ drop trigger if exists settings_touch on settings;
 create trigger settings_touch before update on settings
   for each row execute function touch_updated_at();
 
--- Carga de cada exercício ao longo do tempo — a pergunta que o localStorage não respondia.
+-- Carga de cada exercício ao longo do tempo.
 create or replace view exercise_history as
 select
   w.date,

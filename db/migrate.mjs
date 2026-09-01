@@ -1,9 +1,5 @@
-// Aplica os arquivos de db/migrations em ordem, uma vez cada.
-//
-//   npm run db:migrate
-//
-// A URL do banco vem do .env (via --env-file, embutido no Node 20.6+).
-// Cada arquivo roda dentro de uma transação: ou entra inteiro, ou não entra.
+// npm run db:migrate — aplica os db/migrations em ordem, uma vez cada, e cada um
+// dentro de uma transação.
 
 import { readFile, readdir } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
@@ -14,12 +10,11 @@ const dir = join(dirname(fileURLToPath(import.meta.url)), 'migrations')
 
 const url = process.env.DATABASE_URL
 if (!url) {
-  console.error('DATABASE_URL não definida. Copie .env.example pra .env e ponha a URL do Neon.')
+  console.error('DATABASE_URL não definida. Ponha a URL do Neon no .env.')
   process.exit(1)
 }
 
-// O certificado do Neon é verificado (cadeia + hostname). O aviso do pg sobre
-// 'sslmode=require' virar 'verify-full' é justamente esse comportamento — pode ignorar.
+// O certificado do Neon é verificado; o aviso do pg sobre sslmode é esse comportamento.
 const client = new pg.Client({ connectionString: url, ssl: { rejectUnauthorized: true } })
 
 try {

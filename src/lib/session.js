@@ -1,15 +1,10 @@
+// O treino em andamento. Fica só neste aparelho: é estado de agora, não histórico.
+
 import { today } from './dates'
 import { unitOf } from './items'
 import { uid } from './storage'
 
-/**
- * O treino em andamento: a ficha aberta na academia, com cada série marcada
- * conforme você faz. Só vira um treino salvo no fim.
- *
- * Fica só neste aparelho (não entra no sync): é estado de "agora", não histórico.
- */
-
-/** Ficha → sessão. Cada exercício ganha uma casinha por série. */
+/** Ficha → sessão, com uma casinha por série. */
 export function sessionFromPlan(plan) {
   return {
     id: uid(),
@@ -41,13 +36,13 @@ export function countSets(session) {
   return { total, done }
 }
 
-/** O exercício da vez: o primeiro que ainda tem série pendente. */
+/** O primeiro exercício com série pendente. */
 export function currentIndex(session) {
   const i = session.items.findIndex((item) => item.done.some((d) => !d))
   return i === -1 ? session.items.length - 1 : i
 }
 
-/** Minutos desde o começo, pelo menos 1. */
+/** Minutos desde o começo, no mínimo 1. */
 export function elapsedMinutes(session) {
   return Math.max(1, Math.round((Date.now() - session.startedAt) / 60000))
 }
@@ -63,10 +58,7 @@ export function clock(segundos) {
   return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0')
 }
 
-/**
- * Sessão → treino salvo. Guarda o que você fez de verdade: séries realmente
- * marcadas e a carga que acabou usando, não o que a ficha planejava.
- */
+/** Sessão → treino salvo: as séries marcadas e a carga usada, não o que a ficha planejava. */
 export function sessionToWorkout(session, { rpe, notes }) {
   return {
     date: session.date,

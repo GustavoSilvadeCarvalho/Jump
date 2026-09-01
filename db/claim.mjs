@@ -1,10 +1,7 @@
-// Adota os registros que estão sem dono, atribuindo eles a uma conta.
+// npm run db:claim -- gustavo
 //
-//   npm run db:claim -- gustavo
-//
-// A primeira conta criada já faz isso sozinha. Isto aqui é pra quando sobra
-// órfão depois — por exemplo, um aparelho que sincronizou com a versão antiga
-// do site, sem conta, depois que a conta já existia.
+// Dá dono aos registros órfãos. A primeira conta já faz isso sozinha; isto é pra
+// quando sobra órfão depois.
 import pg from 'pg'
 
 const username = String(process.argv[2] ?? '').trim().toLowerCase()

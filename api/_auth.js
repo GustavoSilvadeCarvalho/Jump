@@ -1,9 +1,4 @@
-// Contas e sessões: como o servidor sabe de quem são os treinos.
-//
-// Senha guardada com scrypt (derivação lenta, sal por usuário) — se o banco
-// vazar, as senhas não vêm junto. A sessão é um token aleatório entregue num
-// cookie HttpOnly, do qual o banco guarda só o hash: nem quem lê o banco
-// consegue se passar por você.
+// Contas e sessões. Senha com scrypt; do token de sessão o banco guarda só o hash.
 
 import crypto from 'node:crypto'
 import { promisify } from 'node:util'
@@ -36,9 +31,9 @@ export async function checkPassword(senha, guardado) {
   }
 }
 
-export const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex')
+const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex')
 
-export function parseCookies(req) {
+function parseCookies(req) {
   const bruto = req.headers?.cookie
   if (!bruto) return {}
   const out = {}
@@ -50,7 +45,7 @@ export function parseCookies(req) {
   return out
 }
 
-/** Cria a sessão no banco e devolve o cabeçalho de cookie pra resposta. */
+/** Cria a sessão e devolve o cabeçalho de cookie. */
 export async function openSession(client, userId, userAgent) {
   const token = crypto.randomBytes(32).toString('base64url')
   const expira = new Date(Date.now() + DIAS * 86400_000)
@@ -71,7 +66,7 @@ function cookieHeader(valor, maxAge) {
     COOKIE + '=' + valor,
     'Path=/',
     'HttpOnly',
-    // Sem SameSite=Lax o cookie viajaria em requisição de outro site.
+    // Sem isto o cookie viajaria em requisição feita por outro site.
     'SameSite=Lax',
     'Secure',
     'Max-Age=' + maxAge,
@@ -80,7 +75,7 @@ function cookieHeader(valor, maxAge) {
 
 export const sessionToken = (req) => parseCookies(req)[COOKIE] ?? null
 
-/** Quem está falando. Null se não há sessão válida. */
+/** Quem está falando, ou null. */
 export async function currentUser(client, req) {
   const token = sessionToken(req)
   if (!token) return null
@@ -93,11 +88,7 @@ export async function currentUser(client, req) {
   return rows[0] ?? null
 }
 
-/**
- * Criar conta pede um convite — o mesmo valor que já está na Vercel. Sem isso,
- * qualquer pessoa que achasse a URL abriria conta no seu banco. Entrar depois
- * não pede convite nenhum: é só usuário e senha.
- */
+/** Criar conta pede convite, senão qualquer um abriria conta no seu banco. */
 export function inviteOk(codigo) {
   const esperado = process.env.SIGNUP_CODE || process.env.SYNC_TOKEN
   if (!esperado) return false

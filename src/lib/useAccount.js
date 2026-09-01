@@ -2,10 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { cachedUser, forgetUser, logout, me } from './auth'
 import { countPending, runSync } from './sync'
 
-/**
- * Estado da conta e do sync, num lugar só: o aviso no topo e o rodapé mostram
- * as duas pontas da mesma coisa.
- */
+/** Estado da conta e do sync — o aviso no topo e o rodapé leem daqui. */
 export function useAccount(store) {
   const [user, setUser] = useState(cachedUser)
   const [status, setStatus] = useState('idle')
@@ -32,7 +29,7 @@ export function useAccount(store) {
       storeRef.current.applySync(result, pushed)
       setStatus('ok')
     } catch (err) {
-      // Sessão recusada: o aviso de "só neste aparelho" volta na hora.
+      // Sessão recusada: o aviso de "só neste aparelho" volta.
       if (err.status === 401) {
         forgetUser()
         setUser(null)
@@ -44,7 +41,7 @@ export function useAccount(store) {
     }
   }, [user])
 
-  // Confere a sessão com o servidor ao abrir. Sem internet não desloga ninguém.
+  // Confere a sessão ao abrir; sem internet não desloga ninguém.
   useEffect(() => {
     if (!cachedUser()) return
     me()

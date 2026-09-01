@@ -60,7 +60,8 @@ Um Postgres no Neon guarda os treinos pra você abrir no celular e no computador
 mesmos dados. Ele não substitui o `localStorage`: o app escreve sempre local primeiro e
 sincroniza por cima.
 
-A URL de conexão fica no `.env` (fora do git — use o `.env.example` como molde):
+O `.env` (fora do git) tem duas variáveis: `DATABASE_URL`, a connection string do
+Neon, e `SYNC_TOKEN`, o convite pra criar conta.
 
 ```bash
 npm run db:migrate   # aplica os db/migrations/*.sql que ainda não rodaram

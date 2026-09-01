@@ -1,13 +1,10 @@
+// A ficha é um plano semanal (days, 0 = domingo). O calendário projeta isso pra
+// frente e pra trás; nada é gravado até você registrar o treino.
+
 import { WEEKDAYS, addDays, weekday } from './dates'
 
-/**
- * Uma ficha é um plano semanal: ela se repete nos dias da semana marcados
- * (`days`, 0 = domingo). O calendário projeta isso pra frente e pra trás;
- * nada de sessão é gravado até você registrar o treino.
- */
-
 /** Fichas marcadas pro dia da semana dessa data. */
-export function plansForDate(plans, iso) {
+function plansForDate(plans, iso) {
   const d = weekday(iso)
   return plans.filter((p) => Array.isArray(p.days) && p.days.includes(d))
 }
@@ -23,11 +20,8 @@ export function workoutsByDate(workouts) {
   return map
 }
 
-/**
- * A ficha conta como cumprida se algum treino do dia aponta pra ela — ou,
- * pra quem registrou sem escolher ficha, se bate a categoria.
- */
-export function planDone(plan, dayWorkouts = []) {
+/** Cumprida se algum treino do dia aponta pra ela, ou se bate a categoria. */
+function planDone(plan, dayWorkouts = []) {
   return dayWorkouts.some((w) => (w.planId ? w.planId === plan.id : w.type === plan.type))
 }
 
@@ -38,8 +32,8 @@ export function dayAgenda(iso, plans, byDate) {
   return { iso, done, planned }
 }
 
-/** Próximas sessões previstas, a partir de (e incluindo) `fromIso`. */
-export function upcoming(plans, workouts, fromIso, days = 7) {
+/** Próximas sessões previstas, a partir de (e incluindo) fromIso. */
+function upcoming(plans, workouts, fromIso, days = 7) {
   const byDate = workoutsByDate(workouts)
   const out = []
   for (let i = 0; i < days; i++) {
@@ -51,7 +45,7 @@ export function upcoming(plans, workouts, fromIso, days = 7) {
   return out
 }
 
-/** Séries somadas — leitura rápida do tamanho da ficha. */
+/** Séries somadas. */
 export function totalSets(plan) {
   return (plan.items ?? []).reduce((sum, i) => sum + (Number(i.sets) || 0), 0)
 }
@@ -77,17 +71,17 @@ export function daysLabel(days) {
   return list.map((d) => WEEKDAYS[d].short).join(' · ')
 }
 
-export function startOfWeek(iso) {
+function startOfWeek(iso) {
   return addDays(iso, -weekday(iso))
 }
 
-/** Os 7 dias da semana de `iso`, de domingo a sábado. */
-export function weekDays(iso) {
+/** Os 7 dias da semana de iso, de domingo a sábado. */
+function weekDays(iso) {
   const start = startOfWeek(iso)
   return Array.from({ length: 7 }, (_, i) => addDays(start, i))
 }
 
-/** A semana inteira de uma vez: agenda de cada dia + quanto do previsto já saiu. */
+/** Agenda de cada dia da semana + quanto do previsto já saiu. */
 export function weekSummary(plans, workouts, iso) {
   const byDate = workoutsByDate(workouts)
   const days = weekDays(iso).map((d) => dayAgenda(d, plans, byDate))
@@ -99,7 +93,7 @@ export function weekSummary(plans, workouts, iso) {
   }
 }
 
-/** A próxima sessão prevista que ainda não foi feita — 'o que eu treino agora'. */
+/** A próxima sessão prevista que ainda não foi feita. */
 export function nextSession(plans, workouts, fromIso) {
   return upcoming(plans, workouts, fromIso, 14).find((s) => !s.done) ?? null
 }
