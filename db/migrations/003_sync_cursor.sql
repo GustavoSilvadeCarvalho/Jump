@@ -1,15 +1,8 @@
--- Separa dois carimbos que estavam sendo confundidos num só.
+-- Separa dois carimbos que estavam num só: updated_at é do relógio do aparelho e
+-- decide quem editou por último; synced_at é do relógio do banco e serve de cursor.
 --
--- `updated_at` é do relógio do aparelho que editou. Serve pra decidir quem
--- editou por último quando dois aparelhos mexem no mesmo registro.
---
--- `synced_at` é do relógio do banco, gravado pela API a cada escrita. Serve de
--- cursor: "me dá o que entrou aqui depois da última vez que conversamos".
---
--- Usar `updated_at` como cursor dava um bug silencioso: se o relógio do celular
--- estivesse alguns segundos atrás do relógio do banco, a edição feita no
--- celular entrava com um carimbo anterior ao cursor do outro aparelho — e nunca
--- era baixada. O treino ficava só num aparelho, sem nenhum erro aparecer.
+-- Usar updated_at como cursor quebrava em silêncio: com o relógio do celular
+-- atrasado, a edição dele entrava antes do cursor do outro aparelho e nunca descia.
 
 alter table plans    add column if not exists synced_at timestamptz not null default now();
 alter table workouts add column if not exists synced_at timestamptz not null default now();

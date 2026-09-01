@@ -1,7 +1,4 @@
 // POST /api/auth — criar conta, entrar, sair e saber quem está logado.
-//
-// Uma rota só, com `action` no corpo: são quatro operações curtas que dividem
-// a mesma conexão e o mesmo tratamento de erro.
 
 import {
   checkPassword,
@@ -65,8 +62,7 @@ export default async function handler(req, res) {
       ])
       await client.query('insert into user_settings (user_id) values ($1) on conflict do nothing', [id])
 
-      // Primeira conta do banco adota o que já estava lá sem dono — os treinos
-      // que subiram na época do código não podem virar órfãos invisíveis.
+      // A primeira conta adota o que já estava no banco sem dono.
       const { rows } = await client.query('select count(*)::int as n from users')
       if (rows[0].n === 1) {
         for (const t of ['plans', 'workouts', 'jumps']) {
@@ -86,8 +82,7 @@ export default async function handler(req, res) {
         [username],
       )
       const user = rows[0]
-      // Mesmo sem o usuário existir, gasta o tempo do scrypt: responder rápido
-      // pra usuário inexistente entregaria quais nomes existem.
+      // Gasta o tempo do scrypt mesmo sem o usuário: responder rápido entregaria quem existe.
       const ok = await checkPassword(password, user?.password_hash ?? 'scrypt$16384$aaaa$aaaa')
       if (!user || !ok) return fail(res, 401, 'Usuário ou senha não conferem.')
 

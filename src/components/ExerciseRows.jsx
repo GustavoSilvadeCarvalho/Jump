@@ -4,7 +4,7 @@ import { Input, Select } from './ui'
 
 const miniLabel = 'mb-1 block text-center text-[10px] font-medium tracking-wide text-ink-3 uppercase'
 
-/** Campo numérico curto com rótulo em cima — no celular placeholder sozinho não basta. */
+/** Campo numérico curto: no celular, placeholder sozinho não basta. */
 function MiniField({ label, header, ...props }) {
   return (
     <div>
@@ -14,7 +14,7 @@ function MiniField({ label, header, ...props }) {
   )
 }
 
-/** Repetições ou segundos, exercício por exercício: 30s de pogo jumps num treino de reps. */
+/** Repetições ou segundos, exercício por exercício. */
 function UnitToggle({ unit, onChange }) {
   return (
     <button

@@ -52,13 +52,13 @@ export function relative(iso) {
 }
 
 export const WEEKDAYS = [
-  { key: 0, label: 'Domingo', short: 'Dom', mini: 'D' },
-  { key: 1, label: 'Segunda', short: 'Seg', mini: 'S' },
-  { key: 2, label: 'Terça', short: 'Ter', mini: 'T' },
-  { key: 3, label: 'Quarta', short: 'Qua', mini: 'Q' },
-  { key: 4, label: 'Quinta', short: 'Qui', mini: 'Q' },
-  { key: 5, label: 'Sexta', short: 'Sex', mini: 'S' },
-  { key: 6, label: 'Sábado', short: 'Sáb', mini: 'S' },
+  { key: 0, label: 'Domingo', short: 'Dom' },
+  { key: 1, label: 'Segunda', short: 'Seg' },
+  { key: 2, label: 'Terça', short: 'Ter' },
+  { key: 3, label: 'Quarta', short: 'Qua' },
+  { key: 4, label: 'Quinta', short: 'Qui' },
+  { key: 5, label: 'Sexta', short: 'Sex' },
+  { key: 6, label: 'Sábado', short: 'Sáb' },
 ]
 
 const MES_LONGO = [
@@ -77,7 +77,7 @@ export function addDays(iso, n) {
   return toISO(d)
 }
 
-/** '31 de agosto' — sem o ano, pra cabeçalho de hoje. */
+/** '31 de agosto'. */
 export function dayMonth(iso) {
   const d = fromISO(iso)
   return `${d.getDate()} de ${MES_LONGO[d.getMonth()]}`
@@ -87,10 +87,7 @@ export function monthLabel(year, month) {
   return `${MES_LONGO[month]} de ${year}`
 }
 
-/**
- * As 6 semanas que cobrem o mês, começando no domingo — sempre 42 células,
- * pra grade não pular de altura ao trocar de mês.
- */
+/** As 6 semanas do mês, do domingo: 42 células fixas, pra grade não pular de altura. */
 export function monthGrid(year, month) {
   const first = new Date(year, month, 1)
   const start = new Date(year, month, 1 - first.getDay())

@@ -95,8 +95,7 @@ export function EmptyState({ title, children, action }) {
   )
 }
 
-/** Barra de ação colada no rodapé do modal — no celular o formulário é longo demais
- * pra deixar o botão de salvar no fim do scroll. */
+/** Ação colada no rodapé do modal: no celular o formulário é longo demais. */
 export function FormActions({ children }) {
   return (
     <div className="sticky bottom-0 -mx-5 -mb-5 flex justify-end gap-2 border-t border-line bg-surface-1 px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">

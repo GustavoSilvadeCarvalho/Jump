@@ -1,16 +1,15 @@
-// Conexão com o Neon e autenticação, compartilhadas pelas funções de api/.
-// O prefixo `_` faz a Vercel tratar este arquivo como código interno, não como rota.
+// Conexão com o Neon. O prefixo _ faz a Vercel tratar o arquivo como código, não rota.
 
 import pg from 'pg'
 
-// Colunas `date` voltam como string 'YYYY-MM-DD' (sem isso o pg devolve um Date
-// em UTC e o dia muda de lugar dependendo do fuso). `numeric` volta como número.
+// date volta como 'YYYY-MM-DD' (o padrão seria um Date em UTC, que troca o dia
+// dependendo do fuso) e numeric volta como número.
 pg.types.setTypeParser(1082, (v) => v)
 pg.types.setTypeParser(1700, (v) => (v === null ? null : Number(v)))
 
 let pool
 
-/** Um pool por instância da função: a Vercel reaproveita entre invocações. */
+/** Um pool por instância: a Vercel reaproveita entre invocações. */
 export function db() {
   if (!pool) {
     const connectionString = process.env.DATABASE_URL

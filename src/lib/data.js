@@ -83,10 +83,7 @@ export const JUMP_KINDS = {
 
 export const JUMP_KIND_KEYS = Object.keys(JUMP_KINDS)
 
-/**
- * Fichas de exemplo — uma semana equilibrada pra quem está começando.
- * Carga fica em branco de propósito: é pessoal.
- */
+/** Fichas de exemplo. Carga fica em branco de propósito: é pessoal. */
 export const PLAN_TEMPLATES = [
   {
     name: 'Impulsão A — explosão',

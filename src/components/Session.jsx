@@ -4,14 +4,10 @@ import { restLabel } from '../lib/items'
 import { clock, countSets, currentIndex, elapsedLabel, elapsedMinutes, sessionToWorkout } from '../lib/session'
 import { Badge, Button, Card, Field, Input, Modal, Textarea } from './ui'
 
-/**
- * O treino acontecendo: marca série por série e conta o descanso.
- *
- * O cronômetro guarda a hora de término, não os segundos restantes — assim
- * bloquear a tela ou trocar de app não atrasa a contagem.
- */
+// O treino acontecendo. O cronômetro guarda a hora de término, não os segundos
+// restantes: bloquear a tela ou trocar de app não atrasa a contagem.
 
-/** Cronômetro que termina daqui a N segundos. Guarda o fim, não o restante. */
+/** Cronômetro que termina daqui a N segundos. */
 function timerDe(segundos, kind, itemIndex) {
   const s = Number(segundos)
   if (!s) return null
@@ -30,8 +26,7 @@ function ajustado(timer, delta) {
 function useAlarm() {
   const ctxRef = useRef(null)
 
-  // Precisa nascer dentro de um toque seu: no iOS, áudio criado fora de um
-  // gesto nasce mudo. Chamado quando você marca a série, não quando toca.
+  // Áudio criado fora de um toque seu nasce mudo no iOS — daí o unlock ao marcar.
   const unlock = () => {
     try {
       const Ctx = window.AudioContext || window.webkitAudioContext
@@ -39,7 +34,7 @@ function useAlarm() {
       if (!ctxRef.current) ctxRef.current = new Ctx()
       if (ctxRef.current.state === 'suspended') ctxRef.current.resume()
     } catch {
-      // Sem áudio disponível — a vibração e a tela ainda avisam.
+      // Sem áudio: a vibração e a tela ainda avisam.
     }
   }
 
@@ -47,7 +42,7 @@ function useAlarm() {
     try {
       navigator.vibrate?.([180, 90, 180])
     } catch {
-      // Vibração não é suportada em todo aparelho (iOS não tem).
+      // O iOS não vibra.
     }
     const ctx = ctxRef.current
     if (!ctx || ctx.state !== 'running') return
@@ -70,14 +65,14 @@ function useAlarm() {
       beep(0.28, 880)
       beep(0.56, 1318)
     } catch {
-      // Idem: falhar o apito não pode derrubar o treino.
+      // Falhar o apito não pode derrubar o treino.
     }
   }
 
   return { unlock, fire }
 }
 
-/** Mantém a tela acesa enquanto você treina (onde o navegador deixa). */
+/** Mantém a tela acesa, onde o navegador deixa. */
 function useKeepAwake() {
   useEffect(() => {
     let lock = null
@@ -86,7 +81,7 @@ function useKeepAwake() {
       try {
         lock = (await navigator.wakeLock?.request('screen')) ?? null
       } catch {
-        // Negado ou sem suporte: a tela apaga sozinha, só isso.
+        // Negado ou sem suporte: a tela só apaga sozinha.
       }
     }
     pedir()
@@ -314,8 +309,7 @@ export default function Session({ store, onClose }) {
   const timer = session?.rest ?? null
   const restante = timer ? Math.ceil((timer.endsAt - agora) / 1000) : 0
 
-  // Chegou a zero: apita uma vez. Se era a série cronometrada, marca ela como
-  // feita e já emenda o descanso — é o encadeamento natural na academia.
+  // Zerou: apita uma vez. Série cronometrada ainda marca a série e emenda o descanso.
   useEffect(() => {
     if (!timer || restante > 0 || disparado.current === timer.endsAt) return
     disparado.current = timer.endsAt

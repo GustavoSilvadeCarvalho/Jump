@@ -1,10 +1,5 @@
-/**
- * Conta do lado do app.
- *
- * A sessão vive num cookie HttpOnly — o JavaScript não lê nem escreve ele, o
- * navegador manda sozinho em cada chamada. Aqui a gente só guarda o nome de
- * quem entrou, pra saber o estado sem precisar de internet ao abrir o app.
- */
+// A sessão vive num cookie HttpOnly, que o navegador manda sozinho. Aqui fica só
+// o nome de quem entrou, pra saber o estado sem depender de internet.
 
 const USER_KEY = 'jump.user'
 
@@ -21,7 +16,7 @@ function cache(user) {
     if (user) localStorage.setItem(USER_KEY, JSON.stringify(user))
     else localStorage.removeItem(USER_KEY)
   } catch {
-    // Sem storage: a sessão atual continua valendo, só não sobrevive ao recarregar.
+    // Sem storage: vale só até recarregar.
   }
 }
 
@@ -35,7 +30,7 @@ async function post(body) {
   try {
     dados = await res.json()
   } catch {
-    // Resposta sem JSON (offline, HTML de erro do proxy): fica só o status.
+    // Resposta sem JSON: fica só o status.
   }
   if (!res.ok) {
     const err = new Error(dados.error ?? 'erro ' + res.status)
@@ -72,7 +67,7 @@ export async function logout() {
   }
 }
 
-/** Sessão recusada pelo servidor: esquece quem estava logado aqui. */
+/** Sessão recusada: esquece quem estava logado aqui. */
 export function forgetUser() {
   cache(null)
 }

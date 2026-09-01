@@ -1,15 +1,10 @@
-// Teste de contas + sync: dois aparelhos de duas pessoas diferentes, pelo mesmo
-// caminho que o app usa (buildPush no cliente → handler da API → mergeSync).
+// npm run db:test — contas e sync pelo mesmo caminho que o app usa
+// (buildPush no cliente → handler da API → mergeSync). Roda contra o banco de
+// verdade, com ids test-*, e apaga tudo no fim.
 //
-// Roda contra o banco de verdade. Cria usuários 'test-*' e apaga tudo no fim.
-//
-// CUIDADO DELIBERADO: as contas de teste são criadas direto no SQL, não pelo
-// /api/auth. A primeira conta criada pela API adota os registros sem dono, e
-// aqui isso faria o teste sequestrar (e depois apagar, no cascade) dados reais
-// que estejam esperando o primeiro login. O caminho de adoção é testado à
-// parte, numa transação desfeita no fim.
-//
-//   npm run db:test
+// As contas de teste nascem direto no SQL, não pelo /api/auth: a primeira conta
+// criada pela API adota os registros órfãos, e o cascade da limpeza levaria
+// junto dados de verdade esperando o primeiro login.
 
 import auth from '../api/auth.js'
 import { hashPassword } from '../api/_auth.js'

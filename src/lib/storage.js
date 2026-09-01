@@ -10,11 +10,11 @@ export const EMPTY = {
   plans: [],
   reach: null,
   reachUpdatedAt: null,
-  // Registros apagados aqui, esperando o sync avisar o servidor.
+  // Apagados aqui, esperando o sync avisar o servidor.
   deleted: { plans: [], workouts: [], jumps: [] },
   // Ids editados aqui e ainda não enviados.
   dirty: { plans: [], workouts: [], jumps: [], reach: false },
-  // Hora do servidor no último sync — o marco do "o que mudou desde então".
+  // Marco do servidor: dali pra frente é novidade.
   syncedAt: null,
   // Treino em andamento. Local: não sincroniza, não é histórico.
   session: null,
@@ -24,12 +24,12 @@ const now = () => new Date().toISOString()
 
 const ids = (v) => (Array.isArray(v) ? v.filter((x) => typeof x === 'string') : [])
 
-/** Registro que veio de antes do sync existir: carimbo mais antigo possível, pra não vencer nada. */
+/** Registro anterior ao sync: carimbo mínimo, pra não vencer de ninguém. */
 const stamped = (list) =>
   (Array.isArray(list) ? list : []).map((r) => (r?.updatedAt ? r : { ...r, updatedAt: EPOCH }))
 
 /** Normaliza o que veio do storage ou de um backup — campos novos podem não existir. */
-export function normalize(parsed) {
+function normalize(parsed) {
   if (!parsed || typeof parsed !== 'object') return EMPTY
   return {
     workouts: stamped(parsed.workouts),
@@ -59,8 +59,7 @@ function read() {
     if (!raw) return EMPTY
     return normalize(JSON.parse(raw))
   } catch {
-    // Storage bloqueado (aba anônima, cookies desligados) ou JSON corrompido:
-    // segue com estado vazio em vez de derrubar o app.
+    // Storage bloqueado ou JSON corrompido: começa vazio em vez de quebrar.
     return EMPTY
   }
 }
@@ -75,7 +74,7 @@ const tombstone = (deleted, key, id) => ({
   [key]: [...deleted[key].filter((t) => t.id !== id), { id, updatedAt: now() }],
 })
 
-/** Apagar: sai da lista, entra na lista de mortos e deixa de estar pendente de envio. */
+/** Sai da lista, vira lápide e some da fila de envio. */
 function removeRecord(state, key, id) {
   return {
     ...state,
@@ -85,14 +84,9 @@ function removeRecord(state, key, id) {
   }
 }
 
-/**
- * Junta o que veio do servidor com o que existe aqui. Por registro vence o
- * carimbo mais novo, então uma edição local ainda não enviada não é atropelada
- * pelo que o banco tinha. Função pura de propósito: é o coração do sync e dá
- * pra testar sem montar a tela.
- */
+/** Junta o que veio do servidor: por registro, vence o carimbo mais novo. */
 export function mergeSync(state, result, pushed) {
-  // O que foi enviado nesta rodada, com o carimbo que tinha na hora do envio.
+  // O que foi enviado nesta rodada, com o carimbo de então.
   const enviado = (key) => new Map(pushed[key].map((p) => [p.id, p.updatedAt]))
 
   const merge = (key, incoming) => {
@@ -100,16 +94,13 @@ export function mergeSync(state, result, pushed) {
     const byId = new Map(state[key].map((r) => [r.id, r]))
     for (const r of incoming) {
       const local = byId.get(r.id)
-      // Registro que acabamos de enviar e não foi tocado desde então: a versão
-      // do servidor manda, mesmo com carimbo mais antigo. Ele pode ter ajustado
-      // o carimbo (relógio do aparelho adiantado) ou recusado o envio por já ter
-      // algo mais novo — nos dois casos o certo é ficar com a dele.
+      // Intocado desde o envio: a versão do servidor manda, mesmo com carimbo
+      // mais antigo — ele pode ter ajustado o carimbo ou recusado o envio.
       const intocado = sent.has(r.id) && local?.updatedAt === sent.get(r.id)
       if (!local || intocado || r.updatedAt > local.updatedAt) byId.set(r.id, r)
     }
     for (const id of result.pull.deleted?.[key] ?? []) {
-      // Uma edição local ainda não enviada segura o registro: ela é mais nova
-      // que o apagar que o servidor conhece, e vai vencer no próximo envio.
+      // Edição local não enviada segura o registro: vence no próximo envio.
       if (byId.has(id) && !state.dirty[key].includes(id)) byId.delete(id)
     }
     return [...byId.values()]
@@ -157,7 +148,7 @@ export function useStore() {
     try {
       localStorage.setItem(KEY, JSON.stringify(state))
     } catch {
-      // Sem persistência disponível — a sessão atual continua funcionando.
+      // Sem storage: a sessão atual ainda funciona.
     }
   }, [state])
 
@@ -188,7 +179,7 @@ export function useStore() {
   const removePlan = useCallback((id) => {
     setState((s) => {
       const next = removeRecord(s, 'plans', id)
-      // O histórico fica: o treino já registrado perde só o vínculo com a ficha.
+      // O treino registrado fica; perde só o vínculo com a ficha.
       const soltos = next.workouts.filter((w) => w.planId === id)
       return {
         ...next,
@@ -222,7 +213,7 @@ export function useStore() {
     setState((s) => (s.session ? { ...s, session: { ...s.session, ...patch } } : s))
   }, [])
 
-  /** Marca ou desmarca uma série. Devolver o descanso é com quem chamou. */
+  /** Marca ou desmarca uma série. O descanso é com quem chamou. */
   const toggleSet = useCallback((itemIndex, setIndex) => {
     setState((s) => {
       if (!s.session) return s
@@ -235,7 +226,7 @@ export function useStore() {
     })
   }, [])
 
-  /** Muda um campo do exercício em andamento (a carga que você acabou usando). */
+  /** Muda um campo do exercício em andamento, como a carga usada. */
   const patchSessionItem = useCallback((itemIndex, patch) => {
     setState((s) => {
       if (!s.session) return s

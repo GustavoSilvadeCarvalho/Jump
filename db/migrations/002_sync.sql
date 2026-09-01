@@ -1,16 +1,8 @@
--- Prepara o banco pra sincronizar com o app.
+-- Prepara o banco pro sync.
 --
--- Duas coisas faltavam:
---
--- 1. Apagar precisa deixar rastro. Se o registro simplesmente sumisse da tabela,
---    o celular mandaria ele de volta no próximo sync. Então apagar vira
---    `deleted_at` preenchido — a linha fica, marcada como morta.
---
--- 2. O `updated_at` tem que ser o do aparelho que editou, não o do banco. Os
---    triggers de 001 sobrescreviam com now() a cada escrita, o que apagaria a
---    informação de quem editou por último. Saem os triggers; a API grava o
---    carimbo que o app mandou (limitado a now(), pra relógio adiantado não
---    ganhar pra sempre).
+-- Apagar vira deleted_at: sem rastro, o celular mandaria o registro de volta no
+-- próximo sync. E o updated_at passa a ser o do aparelho que editou, não o do
+-- banco — por isso os triggers de 001 saem.
 
 alter table plans    add column if not exists deleted_at timestamptz;
 alter table workouts add column if not exists deleted_at timestamptz;
