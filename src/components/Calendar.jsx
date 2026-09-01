@@ -102,7 +102,7 @@ function DoneCard({ workout, onEdit, onDelete }) {
   )
 }
 
-function PlannedCard({ plan, canLog, onLog }) {
+function PlannedCard({ plan, canLog, hoje, onLog }) {
   const cat = CATEGORIES[plan.type]
   return (
     <div
@@ -116,7 +116,7 @@ function PlannedCard({ plan, canLog, onLog }) {
         </div>
         {canLog ? (
           <Button variant="ghost" className="px-3 py-1.5 text-xs" onClick={onLog}>
-            Registrar
+            {hoje ? 'Começar' : 'Registrar'}
           </Button>
         ) : (
           <span className="text-xs text-ink-3">previsto</span>
@@ -128,7 +128,7 @@ function PlannedCard({ plan, canLog, onLog }) {
   )
 }
 
-export default function Calendar({ store, initialDate }) {
+export default function Calendar({ store, initialDate, onStart }) {
   const { workouts, plans, addWorkout, updateWorkout, removeWorkout } = store
   // A home manda o dia junto ao trocar de aba; sem isso, abre em hoje.
   const start = initialDate ?? today()
@@ -267,7 +267,10 @@ export default function Calendar({ store, initialDate }) {
               key={plan.id}
               plan={plan}
               canLog={!isFuture}
-              onLog={() => setDraft(planToDraft(plan, selected))}
+              hoje={selected === today()}
+              onLog={() =>
+                selected === today() ? onStart(plan) : setDraft(planToDraft(plan, selected))
+              }
             />
           ))}
 

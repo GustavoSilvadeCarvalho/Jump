@@ -4,10 +4,12 @@ import Dashboard from './components/Dashboard'
 import Jumps from './components/Jumps'
 import Library from './components/Library'
 import Plans from './components/Plans'
+import Session from './components/Session'
 import SyncPanel from './components/SyncPanel'
 import Workouts from './components/Workouts'
 import { useStore } from './lib/storage'
 import { toISO, today } from './lib/dates'
+import { countSets, sessionFromPlan } from './lib/session'
 
 const icon = (d) => (
   <svg viewBox="0 0 24 24" className="size-6" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
@@ -61,6 +63,24 @@ const TABS = [
   },
   { id: 'biblioteca', label: 'Biblioteca', desktopOnly: true },
 ]
+
+/** Treino aberto mas minimizado: fica acima das abas, esperando você voltar. */
+function ResumeBar({ session, onOpen }) {
+  const { done, total } = countSets(session)
+  return (
+    <button
+      onClick={onOpen}
+      className="flex w-full items-center gap-3 border-t border-accent/40 bg-accent-soft px-4 py-3 text-left sm:px-6"
+    >
+      <span className="size-2 shrink-0 animate-pulse rounded-full bg-accent" aria-hidden="true" />
+      <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">
+        {session.name} em andamento
+      </span>
+      <span className="tnum shrink-0 text-xs text-accent">{done}/{total} séries</span>
+      <span className="shrink-0 text-xs font-semibold text-accent">retomar</span>
+    </button>
+  )
+}
 
 function Logo() {
   return (
@@ -140,6 +160,18 @@ export default function App() {
   const store = useStore()
   const [tab, setTab] = useState('visao')
   const [day, setDay] = useState(today())
+  // Aberto = tela cheia do treino. Fechado com treino em andamento = barra de retomar.
+  const [training, setTraining] = useState(false)
+
+  const startTraining = (plan) => {
+    if (store.session && store.session.planId !== plan.id) {
+      if (!confirm('Já tem um treino em andamento. Descartar ele e começar "' + plan.name + '"?')) return
+    } else if (store.session) {
+      return setTraining(true)
+    }
+    store.startSession(sessionFromPlan(plan))
+    setTraining(true)
+  }
 
   /** Navegar pro calendário já num dia específico (semana da home, treino recente…). */
   const go = (id, iso) => {
@@ -187,9 +219,9 @@ export default function App() {
       </header>
 
       <main className="mx-auto max-w-5xl px-4 py-6 pb-8 sm:px-6 sm:py-10">
-        {tab === 'visao' && <Dashboard store={store} onNavigate={go} />}
-        {tab === 'calendario' && <Calendar store={store} initialDate={day} />}
-        {tab === 'fichas' && <Plans store={store} onNavigate={go} />}
+        {tab === 'visao' && <Dashboard store={store} onNavigate={go} onStart={startTraining} />}
+        {tab === 'calendario' && <Calendar store={store} initialDate={day} onStart={startTraining} />}
+        {tab === 'fichas' && <Plans store={store} onNavigate={go} onStart={startTraining} />}
         {tab === 'treinos' && <Workouts store={store} onNavigate={go} />}
         {tab === 'impulsao' && <Jumps store={store} />}
         {tab === 'biblioteca' && <Library />}
@@ -203,9 +235,15 @@ export default function App() {
       </footer>
 
       {/* Espaço pra barra fixa não cobrir o fim da página */}
-      <div className="h-20 sm:hidden" aria-hidden="true" />
+      <div
+        className={(store.session && !training ? 'h-36 sm:h-16' : 'h-20 sm:h-0') + ' transition-all'}
+        aria-hidden="true"
+      />
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface-0/95 pb-[env(safe-area-inset-bottom)] backdrop-blur sm:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-40">
+        {store.session && !training && <ResumeBar session={store.session} onOpen={() => setTraining(true)} />}
+
+        <nav className="border-t border-line bg-surface-0/95 pb-[env(safe-area-inset-bottom)] backdrop-blur sm:hidden">
         <div className="flex">
           {TABS.filter((t) => !t.desktopOnly).map((t) => {
             const active = tab === t.id
@@ -225,7 +263,10 @@ export default function App() {
             )
           })}
         </div>
-      </nav>
+        </nav>
+      </div>
+
+      {store.session && training && <Session store={store} onClose={() => setTraining(false)} />}
     </div>
   )
 }

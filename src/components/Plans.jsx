@@ -1,11 +1,10 @@
 import { useState } from 'react'
 import { CATEGORIES, CATEGORY_KEYS, PLAN_TEMPLATES } from '../lib/data'
-import { WEEKDAYS, today } from '../lib/dates'
-import { daysLabel, planToDraft, totalSets } from '../lib/schedule'
+import { WEEKDAYS } from '../lib/dates'
+import { daysLabel, totalSets } from '../lib/schedule'
 import { toFormItems, toStoredItems } from '../lib/items'
 import ExerciseRows from './ExerciseRows'
 import ExerciseList from './ExerciseList'
-import WorkoutForm from './WorkoutForm'
 import { Badge, Button, Card, EmptyState, Field, FormActions, Input, Modal, Select, Textarea } from './ui'
 
 function WeekdayPicker({ value, onChange }) {
@@ -108,7 +107,7 @@ function PlanForm({ initial, onSubmit, onClose }) {
   )
 }
 
-function PlanCard({ plan, onEdit, onDelete, onLog }) {
+function PlanCard({ plan, onEdit, onDelete, onStart }) {
   const cat = CATEGORIES[plan.type]
   const sets = totalSets(plan)
 
@@ -154,19 +153,18 @@ function PlanCard({ plan, onEdit, onDelete, onLog }) {
         <span className="tnum text-xs text-ink-3">
           {plan.items.length} exercícios{sets ? ' · ' + sets + ' séries' : ''}
         </span>
-        <Button variant="ghost" className="px-3 py-1.5 text-xs" onClick={onLog}>
-          Registrar hoje
+        <Button variant="ghost" className="px-3 py-1.5 text-xs" onClick={onStart}>
+          Começar treino
         </Button>
       </div>
     </Card>
   )
 }
 
-export default function Plans({ store, onNavigate }) {
-  const { plans, addPlan, updatePlan, removePlan, addWorkout } = store
+export default function Plans({ store, onNavigate, onStart }) {
+  const { plans, addPlan, updatePlan, removePlan } = store
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState(null)
-  const [logging, setLogging] = useState(null)
 
   const close = () => {
     setOpen(false)
@@ -219,7 +217,7 @@ export default function Plans({ store, onNavigate }) {
                   removePlan(plan.id)
                 }
               }}
-              onLog={() => setLogging(planToDraft(plan, today()))}
+              onStart={() => onStart(plan)}
             />
           ))}
         </div>
@@ -246,17 +244,6 @@ export default function Plans({ store, onNavigate }) {
           onSubmit={(data) => (editing ? updatePlan(editing.id, data) : addPlan(data))}
           onClose={close}
         />
-      </Modal>
-
-      <Modal open={!!logging} onClose={() => setLogging(null)} title="Registrar treino" wide>
-        {logging && (
-          <WorkoutForm
-            initial={logging}
-            plans={plans}
-            onSubmit={addWorkout}
-            onClose={() => setLogging(null)}
-          />
-        )}
       </Modal>
     </div>
   )

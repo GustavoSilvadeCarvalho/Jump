@@ -19,6 +19,12 @@ Tudo separado por categoria — **pliometria**, **força**, **alongamento** e **
 - **Fichas** — o plano de cada sessão: exercícios com séries, carga e descanso, e cada um
   medido em repetições **ou** em segundos (30s de pogo jumps no meio de um treino contado
   em reps), mais os dias da semana em que ela se repete. Um clique registra o treino do dia.
+- **Modo treino** — o jeito de registrar enquanto você treina, não depois. Abre a ficha do
+  dia, você vai marcando série por série, e o descanso começa a contar sozinho quando você
+  marca. Nos exercícios contados em segundos o botão vira um cronômetro da própria série,
+  que ao zerar já marca a série e emenda o descanso. No fim salva o que aconteceu de
+  verdade: as séries que saíram, a carga que você acabou usando e o tempo total. Dá pra
+  minimizar e voltar depois — a barra "em andamento" fica esperando.
 - **Treinos** — histórico das sessões feitas, com duração e esforço percebido (RPE);
   filtrar por categoria, editar e apagar.
 - **Impulsão** — registrar saltos por tipo (CMJ, squat jump, com corrida, unilateral),
@@ -32,6 +38,10 @@ Tudo separado por categoria — **pliometria**, **força**, **alongamento** e **
 O app é feito pra ser usado no telefone: navegação por abas na base da tela, campos de
 16px (o iOS não dá zoom ao focar), botão de salvar fixo no rodapé dos formulários e
 respeito às áreas seguras do notch.
+
+No modo treino a tela fica acesa enquanto dá, e o cronômetro guarda a hora de término em
+vez dos segundos restantes — bloquear a tela ou sair pro WhatsApp não atrasa a contagem.
+O fim do descanso apita e vibra (vibração não existe no iOS).
 
 Dá pra instalar como app: abra no navegador e use **Adicionar à tela de início** — ele
 abre em tela cheia, sem barra do navegador. (O ícone é um SVG; no Android sai certinho,
