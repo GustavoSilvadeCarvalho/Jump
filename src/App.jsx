@@ -5,11 +5,12 @@ import Jumps from './components/Jumps'
 import Library from './components/Library'
 import Plans from './components/Plans'
 import Session from './components/Session'
-import SyncPanel from './components/SyncPanel'
+import { AccountBanner, AccountFooter, AccountModal } from './components/Account'
 import Workouts from './components/Workouts'
 import { useStore } from './lib/storage'
 import { toISO, today } from './lib/dates'
 import { countSets, sessionFromPlan } from './lib/session'
+import { useAccount } from './lib/useAccount'
 
 const icon = (d) => (
   <svg viewBox="0 0 24 24" className="size-6" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
@@ -133,7 +134,7 @@ function DataTools({ store }) {
   const clear = () => {
     const aviso =
       'Apagar todos os treinos, fichas e medições? Não dá pra desfazer' +
-      (store.syncedAt ? ' — e, como a sincronização está ligada, some dos outros aparelhos também.' : '.')
+      (store.syncedAt ? ' — e, como a conta está sincronizando, some dos outros aparelhos também.' : '.')
     if (confirm(aviso)) {
       store.clearAll()
     }
@@ -162,6 +163,7 @@ export default function App() {
   const [day, setDay] = useState(today())
   // Aberto = tela cheia do treino. Fechado com treino em andamento = barra de retomar.
   const [training, setTraining] = useState(false)
+  const account = useAccount(store)
 
   const startTraining = (plan) => {
     if (store.session && store.session.planId !== plan.id) {
@@ -216,6 +218,7 @@ export default function App() {
             </svg>
           </button>
         </div>
+        <AccountBanner account={account} />
       </header>
 
       <main className="mx-auto max-w-5xl px-4 py-6 pb-8 sm:px-6 sm:py-10">
@@ -229,7 +232,7 @@ export default function App() {
 
       <footer className="mx-auto max-w-5xl px-4 pb-8 sm:px-6 sm:pb-10">
         <div className="space-y-3 border-t border-line pt-5">
-          <SyncPanel store={store} />
+          <AccountFooter account={account} />
           <DataTools store={store} />
         </div>
       </footer>
@@ -267,6 +270,8 @@ export default function App() {
       </div>
 
       {store.session && training && <Session store={store} onClose={() => setTraining(false)} />}
+
+      <AccountModal account={account} />
     </div>
   )
 }

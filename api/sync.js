@@ -1,5 +1,8 @@
 // POST /api/sync — troca de mudanças entre um aparelho e o banco.
 //
+// Quem está falando vem da sessão (cookie), não de um código no corpo: cada
+// consulta é filtrada pelo dono, então uma conta nunca enxerga a outra.
+//
 // O app manda o que mudou nele e o marco do último sync; devolvemos o que mudou
 // no banco desde então. Vence o mais recente por registro, não pelo conjunto —
 // treinar no celular e mexer numa ficha no computador não faz um sobrescrever
@@ -17,7 +20,8 @@
 // Apagar não remove a linha: marca `deleted_at`. Sem isso, o registro apagado
 // num aparelho voltaria do banco no sync seguinte.
 
-import { authorized, db, fail } from './_db.js'
+import { currentUser } from './_auth.js'
+import { db, fail } from './_db.js'
 
 const EPOCH = '1970-01-01T00:00:00.000Z'
 
@@ -58,12 +62,12 @@ async function replaceItems(client, table, column, ownerId, items) {
   )
 }
 
-async function pushPlans(client, plans) {
+async function pushPlans(client, userId, plans) {
   for (const plan of plans) {
     if (!str(plan.id)) continue
     const { rowCount } = await client.query(
-      `insert into plans (id, name, type, days, notes, updated_at, synced_at, deleted_at)
-       values ($1, $2, $3, $4, $5, least($6::timestamptz, now()), now(), null)
+      `insert into plans (id, user_id, name, type, days, notes, updated_at, synced_at, deleted_at)
+       values ($1, $7, $2, $3, $4, $5, least($6::timestamptz, now()), now(), null)
        on conflict (id) do update set
          name = excluded.name,
          type = excluded.type,
@@ -72,7 +76,7 @@ async function pushPlans(client, plans) {
          updated_at = excluded.updated_at,
          synced_at = now(),
          deleted_at = null
-       where plans.updated_at < excluded.updated_at`,
+       where plans.updated_at < excluded.updated_at and plans.user_id = $7`,
       [
         str(plan.id),
         str(plan.name),
@@ -80,6 +84,7 @@ async function pushPlans(client, plans) {
         list(plan.days).map(Number).filter((d) => d >= 0 && d <= 6),
         str(plan.notes),
         iso(plan.updatedAt),
+        userId,
       ],
     )
     // rowCount 0 = o banco já tinha uma versão mais nova; não mexe nos exercícios.
@@ -87,14 +92,15 @@ async function pushPlans(client, plans) {
   }
 }
 
-async function pushWorkouts(client, workouts) {
+async function pushWorkouts(client, userId, workouts) {
   for (const w of workouts) {
     if (!str(w.id) || !isDate(w.date)) continue
     const { rowCount } = await client.query(
       // O subselect no plan_id evita erro se a ficha ainda não existir aqui:
       // o treino entra sem vínculo em vez de falhar o sync inteiro.
-      `insert into workouts (id, date, type, plan_id, duration, rpe, notes, updated_at, synced_at, deleted_at)
-       values ($1, $2, $3, (select id from plans where id = $4), $5, $6, $7, least($8::timestamptz, now()), now(), null)
+      `insert into workouts (id, user_id, date, type, plan_id, duration, rpe, notes, updated_at, synced_at, deleted_at)
+       values ($1, $9, $2, $3, (select id from plans where id = $4 and user_id = $9), $5, $6, $7,
+               least($8::timestamptz, now()), now(), null)
        on conflict (id) do update set
          date = excluded.date,
          type = excluded.type,
@@ -105,7 +111,7 @@ async function pushWorkouts(client, workouts) {
          updated_at = excluded.updated_at,
          synced_at = now(),
          deleted_at = null
-       where workouts.updated_at < excluded.updated_at`,
+       where workouts.updated_at < excluded.updated_at and workouts.user_id = $9`,
       [
         str(w.id),
         w.date,
@@ -115,18 +121,19 @@ async function pushWorkouts(client, workouts) {
         num(w.rpe),
         str(w.notes),
         iso(w.updatedAt),
+        userId,
       ],
     )
     if (rowCount) await replaceItems(client, 'workout_items', 'workout_id', str(w.id), w.items)
   }
 }
 
-async function pushJumps(client, jumps) {
+async function pushJumps(client, userId, jumps) {
   for (const j of jumps) {
     if (!str(j.id) || !isDate(j.date) || !num(j.height)) continue
     await client.query(
-      `insert into jumps (id, date, kind, height, notes, updated_at, synced_at, deleted_at)
-       values ($1, $2, $3, $4, $5, least($6::timestamptz, now()), now(), null)
+      `insert into jumps (id, user_id, date, kind, height, notes, updated_at, synced_at, deleted_at)
+       values ($1, $7, $2, $3, $4, $5, least($6::timestamptz, now()), now(), null)
        on conflict (id) do update set
          date = excluded.date,
          kind = excluded.kind,
@@ -135,14 +142,14 @@ async function pushJumps(client, jumps) {
          updated_at = excluded.updated_at,
          synced_at = now(),
          deleted_at = null
-       where jumps.updated_at < excluded.updated_at`,
-      [str(j.id), j.date, str(j.kind), num(j.height), str(j.notes), iso(j.updatedAt)],
+       where jumps.updated_at < excluded.updated_at and jumps.user_id = $7`,
+      [str(j.id), j.date, str(j.kind), num(j.height), str(j.notes), iso(j.updatedAt), userId],
     )
   }
 }
 
 /** Apagado no aparelho: marca a linha como morta se o banco não tiver algo mais novo. */
-async function pushDeletions(client, table, tombstones) {
+async function pushDeletions(client, userId, table, tombstones) {
   for (const t of tombstones) {
     if (!str(t.id)) continue
     await client.query(
@@ -150,40 +157,42 @@ async function pushDeletions(client, table, tombstones) {
          set deleted_at = least($2::timestamptz, now()),
              updated_at = least($2::timestamptz, now()),
              synced_at = now()
-       where id = $1 and updated_at < $2::timestamptz`,
-      [str(t.id), iso(t.updatedAt)],
+       where id = $1 and user_id = $3 and updated_at < $2::timestamptz`,
+      [str(t.id), iso(t.updatedAt), userId],
     )
   }
 }
 
-async function pull(client, since) {
+async function pull(client, userId, since) {
   // Uma consulta por vez: a mesma conexão não executa duas em paralelo.
   const plans = await client.query(
-    `select id, name, type, days, notes, updated_at, deleted_at from plans where synced_at > $1`,
-    [since],
+    `select id, name, type, days, notes, updated_at, deleted_at
+       from plans where user_id = $2 and synced_at > $1`,
+    [since, userId],
   )
   const planItems = await client.query(
     `select i.* from plan_items i join plans p on p.id = i.plan_id
-      where p.synced_at > $1 and p.deleted_at is null order by i.position`,
-    [since],
+      where p.user_id = $2 and p.synced_at > $1 and p.deleted_at is null order by i.position`,
+    [since, userId],
   )
   const workouts = await client.query(
     `select id, date, type, plan_id, duration, rpe, notes, updated_at, deleted_at
-       from workouts where synced_at > $1`,
-    [since],
+       from workouts where user_id = $2 and synced_at > $1`,
+    [since, userId],
   )
   const workoutItems = await client.query(
     `select i.* from workout_items i join workouts w on w.id = i.workout_id
-      where w.synced_at > $1 and w.deleted_at is null order by i.position`,
-    [since],
+      where w.user_id = $2 and w.synced_at > $1 and w.deleted_at is null order by i.position`,
+    [since, userId],
   )
   const jumps = await client.query(
-    `select id, date, kind, height, notes, updated_at, deleted_at from jumps where synced_at > $1`,
-    [since],
+    `select id, date, kind, height, notes, updated_at, deleted_at
+       from jumps where user_id = $2 and synced_at > $1`,
+    [since, userId],
   )
   const settings = await client.query(
-    `select reach, updated_at from settings where id = true and synced_at > $1`,
-    [since],
+    `select reach, updated_at from user_settings where user_id = $2 and synced_at > $1`,
+    [since, userId],
   )
 
   const itemsBy = (rows, key) => {
@@ -262,39 +271,45 @@ async function pull(client, since) {
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return fail(res, 405, 'Use POST.')
-  if (!authorized(req)) return fail(res, 401, 'Código de sincronização inválido.')
-
-  const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body ?? {})
-  const since = body.since ? iso(body.since) : EPOCH
-  const push = body.push ?? {}
 
   const client = await db().connect()
   try {
+    const user = await currentUser(client, req)
+    if (!user) return fail(res, 401, 'Entre na sua conta pra sincronizar.')
+
+    const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body ?? {})
+    const since = body.since ? iso(body.since) : EPOCH
+    const push = body.push ?? {}
+
     await client.query('begin')
 
     // Fichas antes dos treinos: o treino aponta pra ficha.
-    await pushPlans(client, list(push.plans))
-    await pushWorkouts(client, list(push.workouts))
-    await pushJumps(client, list(push.jumps))
+    await pushPlans(client, user.id, list(push.plans))
+    await pushWorkouts(client, user.id, list(push.workouts))
+    await pushJumps(client, user.id, list(push.jumps))
 
-    await pushDeletions(client, 'workouts', list(push.deleted?.workouts))
-    await pushDeletions(client, 'plans', list(push.deleted?.plans))
-    await pushDeletions(client, 'jumps', list(push.deleted?.jumps))
+    await pushDeletions(client, user.id, 'workouts', list(push.deleted?.workouts))
+    await pushDeletions(client, user.id, 'plans', list(push.deleted?.plans))
+    await pushDeletions(client, user.id, 'jumps', list(push.deleted?.jumps))
 
     if (push.reachUpdatedAt) {
       await client.query(
-        `update settings
-            set reach = $1, updated_at = least($2::timestamptz, now()), synced_at = now()
-          where id = true and updated_at < $2::timestamptz`,
-        [num(push.reach), iso(push.reachUpdatedAt)],
+        `insert into user_settings (user_id, reach, updated_at, synced_at)
+         values ($3, $1, least($2::timestamptz, now()), now())
+         on conflict (user_id) do update set
+           reach = excluded.reach,
+           updated_at = excluded.updated_at,
+           synced_at = now()
+         where user_settings.updated_at < excluded.updated_at`,
+        [num(push.reach), iso(push.reachUpdatedAt), user.id],
       )
     }
 
-    const pulled = await pull(client, since)
+    const pulled = await pull(client, user.id, since)
     const { rows } = await client.query('select now() as now')
 
     await client.query('commit')
-    res.status(200).json({ now: rows[0].now.toISOString(), pull: pulled })
+    res.status(200).json({ now: rows[0].now.toISOString(), pull: pulled, user: user.username })
   } catch (err) {
     await client.query('rollback').catch(() => {})
     console.error('sync falhou:', err)

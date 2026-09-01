@@ -25,26 +25,6 @@ export function db() {
   return pool
 }
 
-/** Comparação em tempo constante — não vaza o tamanho do prefixo certo. */
-function sameSecret(a, b) {
-  if (typeof a !== 'string' || typeof b !== 'string' || a.length !== b.length) return false
-  let diff = 0
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i)
-  return diff === 0
-}
-
-/**
- * Não há login: o que protege a API é um código que você digita uma vez em cada
- * aparelho. Ele fica no localStorage do aparelho e vai no cabeçalho de cada
- * chamada — nunca dentro do bundle, que é público.
- */
-export function authorized(req) {
-  const expected = process.env.SYNC_TOKEN
-  if (!expected) return false
-  const sent = req.headers['x-sync-token']
-  return sameSecret(Array.isArray(sent) ? sent[0] : sent, expected)
-}
-
 export function fail(res, status, message) {
   res.status(status).json({ error: message })
 }
