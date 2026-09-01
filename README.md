@@ -14,8 +14,8 @@ Tudo separado por categoria — **pliometria**, **força**, **alongamento** e **
 - **Hoje** — a tela inicial responde "o que eu treino agora": a ficha do dia pronta pra
   registrar, a semana em bolinhas (feito x previsto), recorde, ganho, sequência e os
   últimos treinos.
-- **Constância** — mapa de calor na tela inicial, um quadradinho por dia, mais claro
-  quanto mais você treinou naquele dia. Cresce com o histórico, de 12 semanas até um ano.
+- **Constância** — mapa de calor na tela inicial, um mês por vez: cada dia é um quadrado,
+  mais claro quanto mais você treinou nele. Setas pra andar pelos meses.
 - **Calendário** — mês inteiro com bolinha cheia no que foi feito e vazada no que a ficha
   marcou; clique no dia pra ver os exercícios e registrar o treino já preenchido.
 - **Fichas** — o plano de cada sessão: exercícios com séries, carga e descanso, e cada um
