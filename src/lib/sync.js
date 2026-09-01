@@ -3,28 +3,8 @@
  *
  * O aparelho é a fonte da verdade enquanto você treina: tudo continua sendo
  * salvo no localStorage na hora. O sync só leva o que mudou aqui e traz o que
- * mudou lá — se estiver sem sinal, fica pendente e vai na próxima.
+ * mudou lá — se estiver sem sinal ou sem conta, fica pendente e vai na próxima.
  */
-
-const TOKEN_KEY = 'jump.sync-token'
-
-/** O código fica só neste aparelho: nunca vai pro bundle, que é público. */
-export function getToken() {
-  try {
-    return localStorage.getItem(TOKEN_KEY) || ''
-  } catch {
-    return ''
-  }
-}
-
-export function setToken(token) {
-  try {
-    if (token) localStorage.setItem(TOKEN_KEY, token)
-    else localStorage.removeItem(TOKEN_KEY)
-  } catch {
-    // Sem storage o sync não persiste entre sessões; a atual ainda funciona.
-  }
-}
 
 /** O que ainda não foi enviado. */
 export function pendingChanges(state) {
@@ -76,13 +56,16 @@ export function buildPush(state) {
   }
 }
 
-/** Envia o que mudou aqui e recebe o que mudou lá. */
-export async function runSync(state, token) {
+/**
+ * Envia o que mudou aqui e recebe o que mudou lá. Quem autentica é o cookie de
+ * sessão, que o navegador manda sozinho — nada de segredo passando pelo app.
+ */
+export async function runSync(state) {
   const { push, pushed } = buildPush(state)
 
   const res = await fetch('/api/sync', {
     method: 'POST',
-    headers: { 'content-type': 'application/json', 'x-sync-token': token },
+    headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ since: state.syncedAt, push }),
   })
 

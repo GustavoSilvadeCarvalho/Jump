@@ -19,6 +19,12 @@ Tudo separado por categoria — **pliometria**, **força**, **alongamento** e **
 - **Fichas** — o plano de cada sessão: exercícios com séries, carga e descanso, e cada um
   medido em repetições **ou** em segundos (30s de pogo jumps no meio de um treino contado
   em reps), mais os dias da semana em que ela se repete. Um clique registra o treino do dia.
+- **Modo treino** — o jeito de registrar enquanto você treina, não depois. Abre a ficha do
+  dia, você vai marcando série por série, e o descanso começa a contar sozinho quando você
+  marca. Nos exercícios contados em segundos o botão vira um cronômetro da própria série,
+  que ao zerar já marca a série e emenda o descanso. No fim salva o que aconteceu de
+  verdade: as séries que saíram, a carga que você acabou usando e o tempo total. Dá pra
+  minimizar e voltar depois — a barra "em andamento" fica esperando.
 - **Treinos** — histórico das sessões feitas, com duração e esforço percebido (RPE);
   filtrar por categoria, editar e apagar.
 - **Impulsão** — registrar saltos por tipo (CMJ, squat jump, com corrida, unilateral),
@@ -33,6 +39,10 @@ O app é feito pra ser usado no telefone: navegação por abas na base da tela, 
 16px (o iOS não dá zoom ao focar), botão de salvar fixo no rodapé dos formulários e
 respeito às áreas seguras do notch.
 
+No modo treino a tela fica acesa enquanto dá, e o cronômetro guarda a hora de término em
+vez dos segundos restantes — bloquear a tela ou sair pro WhatsApp não atrasa a contagem.
+O fim do descanso apita e vibra (vibração não existe no iOS).
+
 Dá pra instalar como app: abra no navegador e use **Adicionar à tela de início** — ele
 abre em tela cheia, sem barra do navegador. (O ícone é um SVG; no Android sai certinho,
 no iOS pode aparecer genérico até você gerar um PNG.)
@@ -40,7 +50,7 @@ no iOS pode aparecer genérico até você gerar um PNG.)
 ## Onde os dados ficam
 
 Tudo é salvo no `localStorage` do aparelho, na hora — o app funciona inteiro sem internet.
-Se a [sincronização](#sincronização-entre-aparelhos) estiver ligada, essas mudanças também
+Se você [entrar na sua conta](#conta-e-sincronização-entre-aparelhos), essas mudanças também
 sobem pro banco e descem nos outros aparelhos. O rodapé tem **Exportar backup** (gera um
 `.json`) e **Importar**, que funcionam de qualquer jeito.
 
@@ -67,18 +77,30 @@ Os ids continuam sendo gerados no cliente, então o app segue funcionando offlin
 `exercise_history` cruza treino e exercício pra responder o que o `localStorage` não
 respondia: a carga de cada exercício ao longo do tempo.
 
-### Sincronização entre aparelhos
+### Conta e sincronização entre aparelhos
 
 O navegador **não pode** falar direto com o Neon: a connection string daria acesso total ao
 banco pra qualquer um que abrisse o DevTools. Nunca coloque a URL numa variável `VITE_*` —
 o Vite embute essas no bundle que vai pro navegador.
 
-Quem fala com o banco é `api/sync.js`, uma função serverless que roda na Vercel. O app
-manda o que mudou nele, recebe o que mudou lá, e o `localStorage` continua sendo a fonte da
-verdade enquanto você treina — sem sinal na academia nada trava, as mudanças ficam na fila
-e sobem depois.
+Quem fala com o banco são as funções serverless em `api/`, que rodam na Vercel. E como elas
+estão numa URL pública, precisam saber quem é você: por isso existe conta. Você entra uma
+vez em cada aparelho e a sessão dura 180 dias.
 
-**Como funciona a junção.** Cada registro carrega dois carimbos: `updated_at`, do relógio
+- A senha é guardada com **scrypt** (derivação lenta, sal por usuário). Vazou o banco, não
+  vazaram as senhas.
+- A sessão é um token aleatório num cookie **HttpOnly** — o JavaScript não lê nem escreve,
+  e o banco guarda só o hash dele. Sair encerra a sessão no servidor, não só no aparelho.
+- Cada registro tem dono (`user_id`) e toda consulta do sync filtra por ele.
+- **Criar conta pede um convite**: o valor de `SIGNUP_CODE` (ou, se não existir, o
+  `SYNC_TOKEN`) nas variáveis da Vercel. Sem isso qualquer um abriria conta no seu banco.
+  Entrar depois é só usuário e senha.
+
+**Sem conta o app continua inteiro** — tudo é salvo no `localStorage` na hora. Só que aí
+fica mesmo só naquele aparelho, e o app avisa isso numa faixa no topo. Ao entrar, o que já
+estava ali sobe pra conta no primeiro sync.
+
+**Como a junção funciona.** Cada registro carrega dois carimbos: `updated_at`, do relógio
 do aparelho que editou, que decide quem mexeu por último; e `synced_at`, do relógio do
 banco, que é o marco do "o que eu ainda não baixei". Misturar os dois quebra em silêncio —
 com o relógio do celular fora de hora, a edição feita nele entra com carimbo anterior ao
@@ -88,31 +110,28 @@ um treino no celular e editar uma ficha no computador não faz um apagar o outro
 Apagar não remove a linha do banco, marca `deleted_at`. Sem isso o registro apagado num
 aparelho voltaria do banco no sync seguinte.
 
-**Autenticação.** Não há login. O que protege a API é o `SYNC_TOKEN`: um código que você
-digita uma vez em cada aparelho (rodapé → **Conectar**) e que fica no `localStorage`
-daquele aparelho, nunca dentro do bundle. Sem ele a API responde 401 e o app funciona
-normalmente, só offline.
-
-### Publicando com sincronização
+### Publicando
 
 1. Importe o repositório na [Vercel](https://vercel.com/new) — ela detecta o Vite sozinha
    (build `npm run build`, saída `dist`) e publica `api/` como função serverless.
-2. Em **Settings → Environment Variables**, crie `DATABASE_URL` e `SYNC_TOKEN` com os
-   mesmos valores do seu `.env`.
-3. Deploy. No site publicado, rodapé → **Conectar**, cole o `SYNC_TOKEN`. Repita em cada
-   aparelho que for usar.
+2. Em **Settings → Environment Variables**, crie `DATABASE_URL` e `SYNC_TOKEN`. Marque as
+   três caixas — **Production, Preview e Development**. Só em Production e a branch de
+   desenvolvimento sobe sem as variáveis: a API responde 401 e nada sincroniza.
+3. Deploy. No site, **Entrar → Criar conta**, com o `SYNC_TOKEN` no campo de convite.
+   Nos outros aparelhos é só usuário e senha.
 
-O GitHub Pages não serve pra isso: ele só entrega arquivo estático e nunca vai rodar a
-função de `api/`. O app até abre, mas fica sem sincronização.
+O GitHub Pages não serve pra isso: ele só entrega arquivo estático e nunca vai rodar as
+funções de `api/`. O app até abre, mas fica sem conta e sem sincronização.
 
-Pra conferir o sync de ponta a ponta contra o banco de verdade:
+Pra conferir tudo de ponta a ponta contra o banco de verdade:
 
 ```bash
 npm run db:test
 ```
 
-Ele simula dois aparelhos (criar, editar dos dois lados, apagar, editar offline), usa ids
-`test-*` e limpa tudo no fim.
+Ele simula duas contas em três aparelhos (login, sessão expirada, criar, editar dos dois
+lados, apagar, editar offline, e uma conta tentando enxergar a outra), usa ids `test-*` e
+limpa tudo no fim — conferindo, inclusive, que não encostou em nenhum dado de verdade.
 
 ## Rodando localmente
 
@@ -131,11 +150,13 @@ O Vite sobe em `http://localhost:5173`.
 | `npm run lint` | Roda o oxlint |
 | `npm run db:migrate` | Aplica as migrations pendentes no Neon |
 | `npm run db:inspect` | Mostra o esquema e a contagem de linhas |
+| `npm run db:test` | Testa contas e sync de ponta a ponta no banco |
+| `npm run db:claim -- usuario` | Dá dono aos registros que ficaram sem conta |
 
-## Publicando
+## Sem o banco
 
-Veja [Publicando com sincronização](#publicando-com-sincronização). Sem o banco, o app é
-100% estático e o `dist/` roda em qualquer hospedagem.
+O app é 100% estático e o `dist/` roda em qualquer hospedagem — só fica sem conta e sem
+sincronização.
 
 ## Stack
 

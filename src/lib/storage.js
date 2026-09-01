@@ -16,6 +16,8 @@ export const EMPTY = {
   dirty: { plans: [], workouts: [], jumps: [], reach: false },
   // Hora do servidor no último sync — o marco do "o que mudou desde então".
   syncedAt: null,
+  // Treino em andamento. Local: não sincroniza, não é histórico.
+  session: null,
 }
 
 const now = () => new Date().toISOString()
@@ -47,6 +49,7 @@ export function normalize(parsed) {
       reach: !!parsed.dirty?.reach,
     },
     syncedAt: parsed.syncedAt ?? null,
+    session: parsed.session ?? null,
   }
 }
 
@@ -209,6 +212,42 @@ export function useStore() {
     }))
   }, [])
 
+  // --- Treino em andamento ---
+
+  const startSession = useCallback((session) => {
+    setState((s) => ({ ...s, session }))
+  }, [])
+
+  const patchSession = useCallback((patch) => {
+    setState((s) => (s.session ? { ...s, session: { ...s.session, ...patch } } : s))
+  }, [])
+
+  /** Marca ou desmarca uma série. Devolver o descanso é com quem chamou. */
+  const toggleSet = useCallback((itemIndex, setIndex) => {
+    setState((s) => {
+      if (!s.session) return s
+      const items = s.session.items.map((item, i) => {
+        if (i !== itemIndex) return item
+        const done = item.done.map((d, j) => (j === setIndex ? !d : d))
+        return { ...item, done }
+      })
+      return { ...s, session: { ...s.session, items } }
+    })
+  }, [])
+
+  /** Muda um campo do exercício em andamento (a carga que você acabou usando). */
+  const patchSessionItem = useCallback((itemIndex, patch) => {
+    setState((s) => {
+      if (!s.session) return s
+      const items = s.session.items.map((item, i) => (i === itemIndex ? { ...item, ...patch } : item))
+      return { ...s, session: { ...s.session, items } }
+    })
+  }, [])
+
+  const endSession = useCallback(() => {
+    setState((s) => ({ ...s, session: null }))
+  }, [])
+
   /** Backup importado é tratado como edição local: tudo entra na fila de envio. */
   const importAll = useCallback((data) => {
     setState(() => {
@@ -257,6 +296,11 @@ export function useStore() {
     importAll,
     clearAll,
     applySync,
+    startSession,
+    patchSession,
+    patchSessionItem,
+    toggleSet,
+    endSession,
   }
 }
 

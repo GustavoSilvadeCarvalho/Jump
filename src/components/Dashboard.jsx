@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { CATEGORIES, CATEGORY_KEYS, JUMP_KINDS } from '../lib/data'
 import { WEEKDAYS, dayMonth, longDate, relative, today, weekday } from '../lib/dates'
-import { nextSession, planToDraft, totalSets, weekSummary } from '../lib/schedule'
+import { nextSession, totalSets, weekSummary } from '../lib/schedule'
 import {
   inLastDays,
   personalRecord,
@@ -16,8 +16,8 @@ import JumpChart from './JumpChart'
 import WorkoutForm from './WorkoutForm'
 import { Badge, Button, Card, EmptyState, Modal, SectionTitle, Stat } from './ui'
 
-/** O treino de hoje, pronto pra registrar. */
-function TodayCard({ plan, onLog }) {
+/** O treino de hoje, pronto pra começar. */
+function TodayCard({ plan, onStart }) {
   const cat = CATEGORIES[plan.type]
   return (
     <Card className="p-5" style={{ borderColor: 'color-mix(in oklab, ' + cat.color + ' 30%, transparent)' }}>
@@ -31,8 +31,8 @@ function TodayCard({ plan, onLog }) {
         <span className="tnum shrink-0 text-xs text-ink-3">
           {plan.items.length} ex · {totalSets(plan)} séries
         </span>
-        <Button className="ml-auto w-full sm:w-auto" onClick={onLog}>
-          Registrar treino
+        <Button className="ml-auto w-full sm:w-auto" onClick={onStart}>
+          Começar treino
         </Button>
       </div>
     </Card>
@@ -158,7 +158,7 @@ function VolumeBars({ workouts }) {
   )
 }
 
-export default function Dashboard({ store, onNavigate }) {
+export default function Dashboard({ store, onNavigate, onStart }) {
   const { workouts, jumps, plans, addWorkout } = store
   const [draft, setDraft] = useState(null)
 
@@ -224,7 +224,7 @@ export default function Dashboard({ store, onNavigate }) {
         ))}
 
         {pendingToday.map(({ plan }) => (
-          <TodayCard key={plan.id} plan={plan} onLog={() => setDraft(planToDraft(plan, t))} />
+          <TodayCard key={plan.id} plan={plan} onStart={() => onStart(plan)} />
         ))}
 
         {pendingToday.length === 0 && hoje.done.length === 0 && (

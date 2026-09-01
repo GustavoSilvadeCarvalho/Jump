@@ -10,6 +10,7 @@
     "db:migrate": "node --env-file=.env db/migrate.mjs",
     "db:inspect": "node --env-file=.env db/inspect.mjs",
     "db:test": "node --env-file=.env db/sync-test.mjs",
+    "db:claim": "node --env-file=.env db/claim.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
