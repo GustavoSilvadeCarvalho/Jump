@@ -7,10 +7,14 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
+    "db:migrate": "node --env-file=.env db/migrate.mjs",
+    "db:inspect": "node --env-file=.env db/inspect.mjs",
+    "db:test": "node --env-file=.env db/sync-test.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
+    "pg": "^8.23.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "tailwindcss": "^4.3.3"

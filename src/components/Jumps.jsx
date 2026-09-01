@@ -3,7 +3,7 @@ import { JUMP_KINDS, JUMP_KIND_KEYS } from '../lib/data'
 import { longDate, today } from '../lib/dates'
 import { personalRecord, sortByDate, touchHeight } from '../lib/stats'
 import JumpChart from './JumpChart'
-import { Button, Card, Field, Input, Modal, SectionTitle, Select, Textarea } from './ui'
+import { Button, Card, Field, FormActions, Input, Modal, SectionTitle, Select, Textarea } from './ui'
 
 function JumpForm({ onSubmit, onClose }) {
   const [date, setDate] = useState(today())
@@ -59,14 +59,14 @@ function JumpForm({ onSubmit, onClose }) {
         />
       </Field>
 
-      <div className="flex justify-end gap-2 pt-1">
+      <FormActions>
         <Button type="button" variant="quiet" onClick={onClose}>
           Cancelar
         </Button>
-        <Button type="submit" disabled={!valid}>
+        <Button type="submit" className="flex-1 sm:flex-none" disabled={!valid}>
           Salvar salto
         </Button>
-      </div>
+      </FormActions>
     </form>
   )
 }
@@ -96,7 +96,9 @@ export default function Jumps({ store }) {
             Meça sempre do mesmo jeito — mesma superfície, mesmo calçado, mesmo aquecimento.
           </p>
         </div>
-        <Button onClick={() => setOpen(true)}>Registrar salto</Button>
+        <Button className="w-full sm:w-auto" onClick={() => setOpen(true)}>
+          Registrar salto
+        </Button>
       </div>
 
       <Card className="p-5">
@@ -130,7 +132,7 @@ export default function Jumps({ store }) {
       <Card className="p-5">
         <SectionTitle>Alcance parado</SectionTitle>
         <div className="flex flex-wrap items-end gap-4">
-          <Field label="Altura que você alcança em pé (cm)" className="w-48">
+          <Field label="Altura que você alcança em pé (cm)" className="w-full sm:w-48">
             <Input
               type="number"
               step="0.5"
@@ -139,7 +141,7 @@ export default function Jumps({ store }) {
               onChange={(e) => setReach(e.target.value === '' ? null : Number(e.target.value))}
             />
           </Field>
-          <p className="pb-3 text-sm text-ink-3">
+          <p className="text-sm text-ink-3 sm:pb-3">
             {pr && touchHeight(reach, pr.height)
               ? 'Com seu recorde de ' + pr.height + ' cm, você toca ' + touchHeight(reach, pr.height) + ' cm.'
               : 'Preencha pra calcular a que altura você chega no seu melhor salto.'}

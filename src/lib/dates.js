@@ -40,11 +40,64 @@ export function daysAgo(n) {
   return toISO(d)
 }
 
-/** 'hoje', 'ontem', 'há 4 dias' ou a data curta. */
+/** 'hoje', 'amanhã', 'há 4 dias', 'em 3 dias' ou a data curta. */
 export function relative(iso) {
   const diff = daysBetween(iso, today())
   if (diff === 0) return 'hoje'
   if (diff === 1) return 'ontem'
+  if (diff === -1) return 'amanhã'
   if (diff > 1 && diff < 7) return `há ${diff} dias`
+  if (diff < -1 && diff > -7) return `em ${-diff} dias`
   return shortDate(iso)
+}
+
+export const WEEKDAYS = [
+  { key: 0, label: 'Domingo', short: 'Dom', mini: 'D' },
+  { key: 1, label: 'Segunda', short: 'Seg', mini: 'S' },
+  { key: 2, label: 'Terça', short: 'Ter', mini: 'T' },
+  { key: 3, label: 'Quarta', short: 'Qua', mini: 'Q' },
+  { key: 4, label: 'Quinta', short: 'Qui', mini: 'Q' },
+  { key: 5, label: 'Sexta', short: 'Sex', mini: 'S' },
+  { key: 6, label: 'Sábado', short: 'Sáb', mini: 'S' },
+]
+
+const MES_LONGO = [
+  'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+  'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro',
+]
+
+/** 0 (domingo) a 6 (sábado). */
+export function weekday(iso) {
+  return fromISO(iso).getDay()
+}
+
+export function addDays(iso, n) {
+  const d = fromISO(iso)
+  d.setDate(d.getDate() + n)
+  return toISO(d)
+}
+
+/** '31 de agosto' — sem o ano, pra cabeçalho de hoje. */
+export function dayMonth(iso) {
+  const d = fromISO(iso)
+  return `${d.getDate()} de ${MES_LONGO[d.getMonth()]}`
+}
+
+export function monthLabel(year, month) {
+  return `${MES_LONGO[month]} de ${year}`
+}
+
+/**
+ * As 6 semanas que cobrem o mês, começando no domingo — sempre 42 células,
+ * pra grade não pular de altura ao trocar de mês.
+ */
+export function monthGrid(year, month) {
+  const first = new Date(year, month, 1)
+  const start = new Date(year, month, 1 - first.getDay())
+  const cells = []
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i)
+    cells.push({ iso: toISO(d), day: d.getDate(), inMonth: d.getMonth() === month })
+  }
+  return cells
 }

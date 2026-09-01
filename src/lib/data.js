@@ -36,7 +36,7 @@ export const LIBRARY = {
     { name: 'Bounding', hint: 'Passadas longas e altas' },
     { name: 'Salto unilateral', hint: 'Corrige assimetria entre as pernas' },
     { name: 'Tuck jump', hint: 'Joelhos ao peito, série curta' },
-    { name: 'Pogo hops', hint: 'Tornozelo rígido, contato mínimo' },
+    { name: 'Pogo hops', hint: 'Tornozelo rígido, contato mínimo', unit: 'seg' },
     { name: 'CMJ (contramovimento)', hint: 'O salto de teste padrão' },
     { name: 'Approach jump', hint: 'Salto com corrida de aproximação' },
   ],
@@ -82,3 +82,46 @@ export const JUMP_KINDS = {
 }
 
 export const JUMP_KIND_KEYS = Object.keys(JUMP_KINDS)
+
+/**
+ * Fichas de exemplo — uma semana equilibrada pra quem está começando.
+ * Carga fica em branco de propósito: é pessoal.
+ */
+export const PLAN_TEMPLATES = [
+  {
+    name: 'Impulsão A — explosão',
+    type: 'pliometria',
+    days: [1, 4],
+    notes: 'Qualidade acima de volume: pare a série quando a altura cair.',
+    items: [
+      { name: 'Box jump', sets: 4, reps: 5, load: null, rest: 120, unit: 'reps' },
+      { name: 'Depth jump', sets: 3, reps: 5, load: null, rest: 180, unit: 'reps' },
+      { name: 'Salto unilateral', sets: 3, reps: 6, load: null, rest: 90, unit: 'reps' },
+      { name: 'Pogo hops', sets: 3, reps: 20, load: null, rest: 60, unit: 'seg' },
+    ],
+  },
+  {
+    name: 'Força de perna',
+    type: 'forca',
+    days: [2, 5],
+    notes: 'Progrida a carga quando fechar todas as séries com sobra.',
+    items: [
+      { name: 'Agachamento livre', sets: 4, reps: 5, load: null, rest: 180, unit: 'reps' },
+      { name: 'Agachamento búlgaro', sets: 3, reps: 8, load: null, rest: 90, unit: 'reps' },
+      { name: 'Hip thrust', sets: 3, reps: 8, load: null, rest: 120, unit: 'reps' },
+      { name: 'Elevação de panturrilha', sets: 4, reps: 12, load: null, rest: 60, unit: 'reps' },
+    ],
+  },
+  {
+    name: 'Mobilidade & soltura',
+    type: 'mobilidade',
+    days: [3, 6],
+    notes: 'Dia leve — serve pra chegar inteiro no treino seguinte.',
+    items: [
+      { name: 'Mobilidade de tornozelo na parede', sets: 3, reps: 45, load: null, rest: 30, unit: 'seg' },
+      { name: '90/90 de quadril', sets: 3, reps: 60, load: null, rest: 30, unit: 'seg' },
+      { name: 'Flexores do quadril ajoelhado', sets: 2, reps: 40, load: null, rest: 30, unit: 'seg' },
+      { name: "World's greatest stretch", sets: 2, reps: 40, load: null, rest: 30, unit: 'seg' },
+    ],
+  },
+]

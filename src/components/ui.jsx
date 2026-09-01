@@ -1,8 +1,10 @@
 import { useEffect } from 'react'
 
-export function Card({ children, className = '' }) {
+export function Card({ children, className = '', ...props }) {
   return (
-    <div className={`rounded-2xl border border-line bg-surface-1 ${className}`}>{children}</div>
+    <div className={`rounded-2xl border border-line bg-surface-1 ${className}`} {...props}>
+      {children}
+    </div>
   )
 }
 
@@ -17,7 +19,7 @@ export function SectionTitle({ children, action }) {
 
 export function Button({ variant = 'primary', className = '', ...props }) {
   const base =
-    'inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40'
+    'inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40 sm:py-2.5'
   const variants = {
     primary: 'bg-accent text-surface-0 hover:brightness-110 active:brightness-95',
     ghost: 'border border-line bg-surface-2 text-ink hover:border-ink-3',
@@ -38,7 +40,7 @@ export function Field({ label, hint, children, className = '' }) {
 }
 
 const controlBase =
-  'w-full rounded-xl border border-line bg-surface-2 px-3 py-2.5 text-sm text-ink placeholder:text-ink-3 outline-none transition focus:border-accent'
+  'w-full rounded-xl border border-line bg-surface-2 px-3 py-3 text-base text-ink placeholder:text-ink-3 outline-none transition focus:border-accent sm:py-2.5 sm:text-sm'
 
 export function Input({ className = '', ...props }) {
   return <input className={`${controlBase} ${className}`} {...props} />
@@ -89,6 +91,16 @@ export function EmptyState({ title, children, action }) {
       <p className="text-sm font-medium text-ink">{title}</p>
       {children && <p className="mx-auto mt-1.5 max-w-sm text-sm text-ink-3">{children}</p>}
       {action && <div className="mt-5">{action}</div>}
+    </div>
+  )
+}
+
+/** Barra de ação colada no rodapé do modal — no celular o formulário é longo demais
+ * pra deixar o botão de salvar no fim do scroll. */
+export function FormActions({ children }) {
+  return (
+    <div className="sticky bottom-0 -mx-5 -mb-5 flex justify-end gap-2 border-t border-line bg-surface-1 px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+      {children}
     </div>
   )
 }

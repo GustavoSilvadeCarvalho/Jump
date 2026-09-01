@@ -39,6 +39,9 @@ body {
   color: var(--color-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  /* Toque sem flash cinza nem espera de duplo-toque */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 /* Números tabulares em métricas e tabelas */

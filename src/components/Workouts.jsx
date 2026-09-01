@@ -1,217 +1,12 @@
 import { useMemo, useState } from 'react'
-import { CATEGORIES, CATEGORY_KEYS, LIBRARY } from '../lib/data'
-import { longDate, today } from '../lib/dates'
+import { CATEGORIES, CATEGORY_KEYS } from '../lib/data'
+import { longDate } from '../lib/dates'
 import { sortByDate, totalMinutes } from '../lib/stats'
-import { uid } from '../lib/storage'
-import {
-  Badge,
-  Button,
-  Card,
-  EmptyState,
-  Field,
-  Input,
-  Modal,
-  Select,
-  Textarea,
-} from './ui'
+import ExerciseList from './ExerciseList'
+import WorkoutForm from './WorkoutForm'
+import { Badge, Button, Card, EmptyState, Modal } from './ui'
 
-const emptyItem = () => ({ key: uid(), name: '', sets: '', reps: '', load: '' })
-
-function WorkoutForm({ initial, onSubmit, onClose }) {
-  const [date, setDate] = useState(initial?.date ?? today())
-  const [type, setType] = useState(initial?.type ?? 'pliometria')
-  const [duration, setDuration] = useState(initial?.duration ?? '')
-  const [rpe, setRpe] = useState(initial?.rpe ?? 7)
-  const [notes, setNotes] = useState(initial?.notes ?? '')
-  const [items, setItems] = useState(
-    initial?.items?.length
-      ? // Do storage os campos voltam como number|null; o input controlado precisa de string.
-        initial.items.map((i) => ({
-          key: uid(),
-          name: i.name ?? '',
-          sets: i.sets ?? '',
-          reps: i.reps ?? '',
-          load: i.load ?? '',
-        }))
-      : [emptyItem()],
-  )
-
-  // Alongamento e mobilidade se medem em segundos, não em repetições.
-  const isHold = type === 'alongamento' || type === 'mobilidade'
-
-  const setItem = (key, patch) =>
-    setItems((list) => list.map((i) => (i.key === key ? { ...i, ...patch } : i)))
-
-  const addFromLibrary = (name) => {
-    if (!name) return
-    setItems((list) => {
-      const blank = list.find((i) => !i.name.trim())
-      if (blank) return list.map((i) => (i.key === blank.key ? { ...i, name } : i))
-      return [...list, { ...emptyItem(), name }]
-    })
-  }
-
-  const filled = items.filter((i) => i.name.trim())
-  const valid = filled.length > 0
-
-  const submit = (e) => {
-    e.preventDefault()
-    if (!valid) return
-    onSubmit({
-      date,
-      type,
-      duration: duration === '' ? null : Number(duration),
-      rpe: Number(rpe),
-      notes: notes.trim(),
-      items: filled.map(({ name, sets, reps, load }) => ({
-        name: name.trim(),
-        sets: sets === '' ? null : Number(sets),
-        reps: reps === '' ? null : Number(reps),
-        load: load === '' ? null : Number(load),
-      })),
-    })
-    onClose()
-  }
-
-  return (
-    <form onSubmit={submit} className="space-y-5">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Field label="Data" className="col-span-2 sm:col-span-1">
-          <Input type="date" value={date} max={today()} onChange={(e) => setDate(e.target.value)} />
-        </Field>
-        <Field label="Tipo" className="col-span-2">
-          <Select value={type} onChange={(e) => setType(e.target.value)}>
-            {CATEGORY_KEYS.map((k) => (
-              <option key={k} value={k}>
-                {CATEGORIES[k].label}
-              </option>
-            ))}
-          </Select>
-        </Field>
-        <Field label="Duração (min)">
-          <Input
-            type="number"
-            min="1"
-            placeholder="45"
-            value={duration}
-            onChange={(e) => setDuration(e.target.value)}
-          />
-        </Field>
-      </div>
-
-      <div>
-        <div className="mb-2 flex items-center justify-between gap-3">
-          <span className="text-xs font-medium text-ink-2">Exercícios</span>
-          <Select
-            className="w-auto max-w-56 py-1.5 text-xs"
-            value=""
-            onChange={(e) => addFromLibrary(e.target.value)}
-          >
-            <option value="">+ Da biblioteca…</option>
-            {LIBRARY[type].map((ex) => (
-              <option key={ex.name} value={ex.name}>
-                {ex.name}
-              </option>
-            ))}
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          {items.map((item) => (
-            <div key={item.key} className="flex gap-2">
-              <Input
-                className="flex-1"
-                placeholder="Nome do exercício"
-                value={item.name}
-                onChange={(e) => setItem(item.key, { name: e.target.value })}
-              />
-              <Input
-                className="w-14 px-2 text-center"
-                type="number"
-                min="1"
-                placeholder="3"
-                aria-label="Séries"
-                value={item.sets}
-                onChange={(e) => setItem(item.key, { sets: e.target.value })}
-              />
-              <Input
-                className="w-16 px-2 text-center"
-                type="number"
-                min="1"
-                placeholder={isHold ? '30s' : '8'}
-                aria-label={isHold ? 'Segundos' : 'Repetições'}
-                value={item.reps}
-                onChange={(e) => setItem(item.key, { reps: e.target.value })}
-              />
-              {!isHold && (
-                <Input
-                  className="w-16 px-2 text-center"
-                  type="number"
-                  min="0"
-                  step="0.5"
-                  placeholder="kg"
-                  aria-label="Carga em quilos"
-                  value={item.load}
-                  onChange={(e) => setItem(item.key, { load: e.target.value })}
-                />
-              )}
-              <button
-                type="button"
-                onClick={() => setItems((l) => (l.length === 1 ? [emptyItem()] : l.filter((i) => i.key !== item.key)))}
-                aria-label="Remover exercício"
-                className="shrink-0 rounded-lg px-2 text-ink-3 transition hover:text-[#e66767]"
-              >
-                <svg viewBox="0 0 20 20" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.7">
-                  <path d="M5 10h10" strokeLinecap="round" />
-                </svg>
-              </button>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-2 flex items-center justify-between">
-          <Button type="button" variant="quiet" className="px-0" onClick={() => setItems((l) => [...l, emptyItem()])}>
-            + Adicionar linha
-          </Button>
-          <span className="text-xs text-ink-3">
-            séries · {isHold ? 'segundos' : 'reps · carga'}
-          </span>
-        </div>
-      </div>
-
-      <Field label={'Esforço percebido: ' + rpe + '/10'} hint="1 é leve, 10 é o máximo que você aguenta">
-        <input
-          type="range"
-          min="1"
-          max="10"
-          value={rpe}
-          onChange={(e) => setRpe(e.target.value)}
-          className="w-full accent-accent"
-        />
-      </Field>
-
-      <Field label="Notas">
-        <Textarea
-          rows={2}
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          placeholder="Joelho incomodou no terceiro set"
-        />
-      </Field>
-
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="quiet" onClick={onClose}>
-          Cancelar
-        </Button>
-        <Button type="submit" disabled={!valid}>
-          {initial ? 'Salvar alterações' : 'Salvar treino'}
-        </Button>
-      </div>
-    </form>
-  )
-}
-
-function WorkoutRow({ workout, onEdit, onDelete }) {
+function WorkoutRow({ workout, planName, onEdit, onDelete }) {
   const cat = CATEGORIES[workout.type]
   const [expanded, setExpanded] = useState(false)
 
@@ -222,6 +17,7 @@ function WorkoutRow({ workout, onEdit, onDelete }) {
           <div className="flex flex-wrap items-center gap-2">
             <Badge color={cat.color}>{cat.label}</Badge>
             <span className="text-sm text-ink-2">{longDate(workout.date)}</span>
+            {planName && <span className="text-xs text-ink-3">· {planName}</span>}
             {workout.duration ? (
               <span className="tnum text-xs text-ink-3">{workout.duration} min</span>
             ) : null}
@@ -230,32 +26,18 @@ function WorkoutRow({ workout, onEdit, onDelete }) {
 
           <button
             onClick={() => setExpanded((v) => !v)}
+            aria-expanded={expanded}
             className="mt-2 block text-left text-sm text-ink transition hover:text-accent"
           >
             {workout.items.length} exercício{workout.items.length > 1 ? 's' : ''}
-            <span className="ml-1.5 text-ink-3">
-              · {workout.items.map((i) => i.name).join(', ')}
-            </span>
+            <span className="ml-1.5 text-ink-3">· {workout.items.map((i) => i.name).join(', ')}</span>
           </button>
 
           {expanded && (
-            <ul className="mt-3 space-y-1.5 border-l-2 border-line pl-4">
-              {workout.items.map((item, idx) => (
-                <li key={idx} className="flex flex-wrap items-baseline gap-x-2 text-sm">
-                  <span className="text-ink">{item.name}</span>
-                  <span className="tnum text-xs text-ink-3">
-                    {[
-                      item.sets ? item.sets + '×' : null,
-                      item.reps ? item.reps : null,
-                      item.load ? item.load + ' kg' : null,
-                    ]
-                      .filter(Boolean)
-                      .join(' ')}
-                  </span>
-                </li>
-              ))}
-              {workout.notes && <li className="pt-1 text-xs text-ink-2">{workout.notes}</li>}
-            </ul>
+            <div className="mt-3 border-l-2 border-line pl-4">
+              <ExerciseList items={workout.items} type={workout.type} />
+              {workout.notes && <p className="mt-2 text-xs text-ink-2">{workout.notes}</p>}
+            </div>
           )}
         </div>
 
@@ -284,8 +66,8 @@ function WorkoutRow({ workout, onEdit, onDelete }) {
   )
 }
 
-export default function Workouts({ store }) {
-  const { workouts, addWorkout, updateWorkout, removeWorkout } = store
+export default function Workouts({ store, onNavigate }) {
+  const { workouts, plans, addWorkout, updateWorkout, removeWorkout } = store
   const [filter, setFilter] = useState('todos')
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState(null)
@@ -294,6 +76,8 @@ export default function Workouts({ store }) {
     const filtered = filter === 'todos' ? workouts : workouts.filter((w) => w.type === filter)
     return sortByDate(filtered).reverse()
   }, [workouts, filter])
+
+  const planName = (id) => plans.find((p) => p.id === id)?.name ?? null
 
   const close = () => {
     setOpen(false)
@@ -309,7 +93,9 @@ export default function Workouts({ store }) {
             {workouts.length} sessões · {totalMinutes(workouts)} minutos no total
           </p>
         </div>
-        <Button onClick={() => setOpen(true)}>Novo treino</Button>
+        <Button className="w-full sm:w-auto" onClick={() => setOpen(true)}>
+          Novo treino
+        </Button>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -339,7 +125,16 @@ export default function Workouts({ store }) {
         <EmptyState
           title={workouts.length === 0 ? 'Nenhum treino registrado' : 'Nada nesse filtro'}
           action={
-            workouts.length === 0 ? <Button onClick={() => setOpen(true)}>Registrar o primeiro</Button> : null
+            workouts.length === 0 ? (
+              <div className="flex flex-wrap justify-center gap-2">
+                <Button onClick={() => setOpen(true)}>Registrar o primeiro</Button>
+                {plans.length === 0 && onNavigate && (
+                  <Button variant="ghost" onClick={() => onNavigate('fichas')}>
+                    Montar uma ficha
+                  </Button>
+                )}
+              </div>
+            ) : null
           }
         >
           {workouts.length === 0
@@ -352,6 +147,7 @@ export default function Workouts({ store }) {
             <WorkoutRow
               key={w.id}
               workout={w}
+              planName={planName(w.planId)}
               onEdit={() => {
                 setEditing(w)
                 setOpen(true)
@@ -366,6 +162,7 @@ export default function Workouts({ store }) {
         <WorkoutForm
           key={editing?.id ?? 'novo'}
           initial={editing}
+          plans={plans}
           onSubmit={(data) => (editing ? updateWorkout(editing.id, data) : addWorkout(data))}
           onClose={close}
         />

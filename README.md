@@ -2,26 +2,117 @@
 
 App web pra registrar treinos de impulsão e acompanhar a evolução do salto vertical.
 
-Os treinos ficam separados por categoria — **pliometria**, **força**, **alongamento** e
-**mobilidade** — e as medições de salto viram um gráfico de progresso ao longo do tempo.
+Você monta as **fichas** (o plano de cada treino: exercícios, séries, repetições **ou
+segundos**, carga e descanso), marca em que dias da semana fazer cada uma, e o **calendário** mostra o que já
+foi feito e o que vem pela frente. As medições de salto viram um gráfico de progresso ao
+longo do tempo.
+
+Tudo separado por categoria — **pliometria**, **força**, **alongamento** e **mobilidade**.
 
 ## O que dá pra fazer
 
-- **Visão geral** — recorde, ganho desde a primeira medição, sequência de dias treinando
-  e volume por categoria nos últimos 30 dias.
-- **Treinos** — registrar sessões com exercícios, séries, repetições, carga, duração e
-  esforço percebido (RPE); filtrar por categoria; editar e apagar.
+- **Hoje** — a tela inicial responde "o que eu treino agora": a ficha do dia pronta pra
+  registrar, a semana em bolinhas (feito x previsto), recorde, ganho, sequência e os
+  últimos treinos.
+- **Calendário** — mês inteiro com bolinha cheia no que foi feito e vazada no que a ficha
+  marcou; clique no dia pra ver os exercícios e registrar o treino já preenchido.
+- **Fichas** — o plano de cada sessão: exercícios com séries, carga e descanso, e cada um
+  medido em repetições **ou** em segundos (30s de pogo jumps no meio de um treino contado
+  em reps), mais os dias da semana em que ela se repete. Um clique registra o treino do dia.
+- **Treinos** — histórico das sessões feitas, com duração e esforço percebido (RPE);
+  filtrar por categoria, editar e apagar.
 - **Impulsão** — registrar saltos por tipo (CMJ, squat jump, com corrida, unilateral),
   ver a curva de evolução de cada tipo e calcular a que altura você toca a partir do
   seu alcance parado.
 - **Biblioteca** — catálogo de exercícios por categoria, disponível na hora de montar
   um treino.
 
+## No celular
+
+O app é feito pra ser usado no telefone: navegação por abas na base da tela, campos de
+16px (o iOS não dá zoom ao focar), botão de salvar fixo no rodapé dos formulários e
+respeito às áreas seguras do notch.
+
+Dá pra instalar como app: abra no navegador e use **Adicionar à tela de início** — ele
+abre em tela cheia, sem barra do navegador. (O ícone é um SVG; no Android sai certinho,
+no iOS pode aparecer genérico até você gerar um PNG.)
+
 ## Onde os dados ficam
 
-Tudo é salvo no `localStorage` do navegador — não há servidor nem conta. O rodapé tem
-**Exportar backup** (gera um `.json`) e **Importar**, pra levar o histórico pra outro
-navegador ou celular.
+Tudo é salvo no `localStorage` do aparelho, na hora — o app funciona inteiro sem internet.
+Se a [sincronização](#sincronização-entre-aparelhos) estiver ligada, essas mudanças também
+sobem pro banco e descem nos outros aparelhos. O rodapé tem **Exportar backup** (gera um
+`.json`) e **Importar**, que funcionam de qualquer jeito.
+
+## Banco de dados (Neon)
+
+Um Postgres no Neon guarda os treinos pra você abrir no celular e no computador com os
+mesmos dados. Ele não substitui o `localStorage`: o app escreve sempre local primeiro e
+sincroniza por cima.
+
+A URL de conexão fica no `.env` (fora do git — use o `.env.example` como molde):
+
+```bash
+npm run db:migrate   # aplica os db/migrations/*.sql que ainda não rodaram
+npm run db:inspect   # lista tabelas, colunas e quantas linhas tem cada uma
+```
+
+Cada migration roda uma vez só, dentro de uma transação, e fica registrada na tabela
+`schema_migrations`. Pra mudar o esquema, crie `db/migrations/002_….sql` — nunca edite uma
+migration já aplicada.
+
+As tabelas seguem o modelo que o app já usa: `plans` + `plan_items` (as fichas), `workouts`
++ `workout_items` (o que foi feito), `jumps` (as medições) e `settings` (o alcance parado).
+Os ids continuam sendo gerados no cliente, então o app segue funcionando offline. A view
+`exercise_history` cruza treino e exercício pra responder o que o `localStorage` não
+respondia: a carga de cada exercício ao longo do tempo.
+
+### Sincronização entre aparelhos
+
+O navegador **não pode** falar direto com o Neon: a connection string daria acesso total ao
+banco pra qualquer um que abrisse o DevTools. Nunca coloque a URL numa variável `VITE_*` —
+o Vite embute essas no bundle que vai pro navegador.
+
+Quem fala com o banco é `api/sync.js`, uma função serverless que roda na Vercel. O app
+manda o que mudou nele, recebe o que mudou lá, e o `localStorage` continua sendo a fonte da
+verdade enquanto você treina — sem sinal na academia nada trava, as mudanças ficam na fila
+e sobem depois.
+
+**Como funciona a junção.** Cada registro carrega dois carimbos: `updated_at`, do relógio
+do aparelho que editou, que decide quem mexeu por último; e `synced_at`, do relógio do
+banco, que é o marco do "o que eu ainda não baixei". Misturar os dois quebra em silêncio —
+com o relógio do celular fora de hora, a edição feita nele entra com carimbo anterior ao
+marco do outro aparelho e nunca desce. A junção é por registro, não pelo conjunto: registrar
+um treino no celular e editar uma ficha no computador não faz um apagar o outro.
+
+Apagar não remove a linha do banco, marca `deleted_at`. Sem isso o registro apagado num
+aparelho voltaria do banco no sync seguinte.
+
+**Autenticação.** Não há login. O que protege a API é o `SYNC_TOKEN`: um código que você
+digita uma vez em cada aparelho (rodapé → **Conectar**) e que fica no `localStorage`
+daquele aparelho, nunca dentro do bundle. Sem ele a API responde 401 e o app funciona
+normalmente, só offline.
+
+### Publicando com sincronização
+
+1. Importe o repositório na [Vercel](https://vercel.com/new) — ela detecta o Vite sozinha
+   (build `npm run build`, saída `dist`) e publica `api/` como função serverless.
+2. Em **Settings → Environment Variables**, crie `DATABASE_URL` e `SYNC_TOKEN` com os
+   mesmos valores do seu `.env`.
+3. Deploy. No site publicado, rodapé → **Conectar**, cole o `SYNC_TOKEN`. Repita em cada
+   aparelho que for usar.
+
+O GitHub Pages não serve pra isso: ele só entrega arquivo estático e nunca vai rodar a
+função de `api/`. O app até abre, mas fica sem sincronização.
+
+Pra conferir o sync de ponta a ponta contra o banco de verdade:
+
+```bash
+npm run db:test
+```
+
+Ele simula dois aparelhos (criar, editar dos dois lados, apagar, editar offline), usa ids
+`test-*` e limpa tudo no fim.
 
 ## Rodando localmente
 
@@ -38,13 +129,16 @@ O Vite sobe em `http://localhost:5173`.
 | `npm run build` | Build de produção em `dist/` |
 | `npm run preview` | Serve o build pra conferir antes de publicar |
 | `npm run lint` | Roda o oxlint |
+| `npm run db:migrate` | Aplica as migrations pendentes no Neon |
+| `npm run db:inspect` | Mostra o esquema e a contagem de linhas |
 
 ## Publicando
 
-O projeto é 100% estático — o `dist/` roda em qualquer hospedagem. Na Vercel, importe o
-repositório e ela detecta o Vite sozinha (build `npm run build`, saída `dist`).
+Veja [Publicando com sincronização](#publicando-com-sincronização). Sem o banco, o app é
+100% estático e o `dist/` roda em qualquer hospedagem.
 
 ## Stack
 
-Vite · React 19 · Tailwind CSS 4. Sem backend e sem dependência de gráfico — o gráfico de
+Vite · React 19 · Tailwind CSS 4 · Postgres (Neon) atrás de uma função serverless. Sem
+dependência de gráfico — o gráfico de
 evolução é SVG escrito à mão, com paleta validada pra contraste e daltonismo em fundo escuro.
