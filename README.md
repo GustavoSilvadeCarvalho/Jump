@@ -41,8 +41,8 @@ O Vite sobe em `http://localhost:5173`.
 
 ## Publicando
 
-O workflow em `.github/workflows/deploy.yml` faz build e publica no GitHub Pages a cada
-push na `main`. Pra ligar: **Settings → Pages → Source: GitHub Actions**.
+O projeto é 100% estático — o `dist/` roda em qualquer hospedagem. Na Vercel, importe o
+repositório e ela detecta o Vite sozinha (build `npm run build`, saída `dist`).
 
 ## Stack
 
