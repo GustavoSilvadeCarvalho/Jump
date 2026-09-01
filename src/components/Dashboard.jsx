@@ -12,6 +12,7 @@ import {
   volumeByCategory,
 } from '../lib/stats'
 import ExerciseList from './ExerciseList'
+import Heatmap from './Heatmap'
 import JumpChart from './JumpChart'
 import WorkoutForm from './WorkoutForm'
 import { Badge, Button, Card, EmptyState, Modal, SectionTitle, Stat } from './ui'
@@ -299,6 +300,8 @@ export default function Dashboard({ store, onNavigate, onStart }) {
           sub={dias > 0 ? 'seguidos' : 'treine hoje'}
         />
       </div>
+
+      <Heatmap workouts={workouts} onNavigate={onNavigate} />
 
       <div className="grid gap-6 lg:grid-cols-5">
         <Card className="p-5 lg:col-span-3">
