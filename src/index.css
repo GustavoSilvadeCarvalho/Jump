@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+@theme {
+  /* Superfícies */
+  --color-surface-0: #0b0d11;
+  --color-surface-1: #12141a;
+  --color-surface-2: #1a1d25;
+  --color-line: #262a33;
+
+  /* Texto */
+  --color-ink: #f4f5f7;
+  --color-ink-2: #a5abb8;
+  --color-ink-3: #6f7684;
+
+  /* Marca */
+  --color-accent: #a3d13d;
+  --color-accent-mark: #79a327;
+  --color-accent-soft: #1e2a12;
+
+  /* Categorias de treino (paleta validada p/ fundo escuro) */
+  --color-cat-plio: #3987e5;
+  --color-cat-forca: #d95926;
+  --color-cat-along: #199e70;
+  --color-cat-mob: #c98500;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html, body, #root {
+  min-height: 100%;
+}
+
+body {
+  background: var(--color-surface-0);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Números tabulares em métricas e tabelas */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+::selection {
+  background: var(--color-accent);
+  color: #0b0d11;
+}
+
+input, select, textarea, button {
+  font: inherit;
+}
+
+/* Remove as setinhas dos inputs numéricos */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Ajusta o ícone do date picker pro tema escuro */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.7);
+  cursor: pointer;
+}
