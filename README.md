@@ -151,6 +151,7 @@ O Vite sobe em `http://localhost:5173`.
 | `npm run db:migrate` | Aplica as migrations pendentes no Neon |
 | `npm run db:inspect` | Mostra o esquema e a contagem de linhas |
 | `npm run db:test` | Testa contas e sync de ponta a ponta no banco |
+| `npm run db:claim -- usuario` | Dá dono aos registros que ficaram sem conta |
 
 ## Sem o banco
 
