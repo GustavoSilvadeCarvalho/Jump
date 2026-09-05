@@ -11,7 +11,7 @@ export default function Library() {
         </p>
       </div>
 
-      {CATEGORY_KEYS.map((key) => {
+      {CATEGORY_KEYS.filter((key) => LIBRARY[key].length).map((key) => {
         const cat = CATEGORIES[key]
         return (
           <section key={key}>

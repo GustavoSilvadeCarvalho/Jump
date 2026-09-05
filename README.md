@@ -7,7 +7,8 @@ segundos**, carga e descanso), marca em que dias da semana fazer cada uma, e o *
 foi feito e o que vem pela frente. As medições de salto viram um gráfico de progresso ao
 longo do tempo.
 
-Tudo separado por categoria — **pliometria**, **força**, **alongamento** e **mobilidade**.
+Tudo separado por categoria — **pliometria**, **força**, **alongamento**, **mobilidade** e
+**jogo**.
 
 ## O que dá pra fazer
 
@@ -27,6 +28,8 @@ Tudo separado por categoria — **pliometria**, **força**, **alongamento** e **
   que ao zerar já marca a série e emenda o descanso. No fim salva o que aconteceu de
   verdade: as séries que saíram, a carga que você acabou usando e o tempo total. Dá pra
   minimizar e voltar depois — a barra "em andamento" fica esperando.
+- **Jogo** — dia em que você trocou o treino por uma partida entra como categoria
+  própria, sem exercícios: um toque em "Joguei hoje" e a sequência de dias não zera.
 - **Treinos** — histórico das sessões feitas, com duração e esforço percebido (RPE);
   filtrar por categoria, editar e apagar.
 - **Impulsão** — registrar saltos por tipo (CMJ, squat jump, com corrida, unilateral),

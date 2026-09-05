@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CATEGORIES, CATEGORY_KEYS, PLAN_TEMPLATES } from '../lib/data'
+import { CATEGORIES, PLAN_CATEGORY_KEYS, PLAN_TEMPLATES } from '../lib/data'
 import { WEEKDAYS } from '../lib/dates'
 import { daysLabel, totalSets } from '../lib/schedule'
 import { toFormItems, toStoredItems } from '../lib/items'
@@ -71,7 +71,7 @@ function PlanForm({ initial, onSubmit, onClose }) {
         </Field>
         <Field label="Categoria">
           <Select value={type} onChange={(e) => setType(e.target.value)}>
-            {CATEGORY_KEYS.map((k) => (
+            {PLAN_CATEGORY_KEYS.map((k) => (
               <option key={k} value={k}>
                 {CATEGORIES[k].label}
               </option>

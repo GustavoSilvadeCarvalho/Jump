@@ -23,9 +23,20 @@ export const CATEGORIES = {
     desc: 'Amplitude articular e ativação',
     color: 'var(--color-cat-mob)',
   },
+  jogo: {
+    label: 'Jogo',
+    short: 'Jogo',
+    desc: 'Partida no lugar do treino — conta pra sequência',
+    color: 'var(--color-cat-jogo)',
+  },
 }
 
 export const CATEGORY_KEYS = Object.keys(CATEGORIES)
+
+/** Jogo não vira ficha: ficha é um plano de exercícios. */
+export const PLAN_CATEGORY_KEYS = CATEGORY_KEYS.filter((k) => k !== 'jogo')
+
+export const isGame = (type) => type === 'jogo'
 
 export const LIBRARY = {
   pliometria: [
@@ -62,6 +73,7 @@ export const LIBRARY = {
     { name: 'Gato-camelo', hint: 'Coluna, entre séries' },
     { name: 'Alongamento de sóleo', hint: 'Joelho flexionado' },
   ],
+  jogo: [],
   mobilidade: [
     { name: 'Mobilidade de tornozelo na parede', hint: 'Joelho passa da ponta do pé' },
     { name: '90/90 de quadril', hint: 'Rotação interna e externa' },

@@ -1,6 +1,7 @@
 import { itemSummary } from '../lib/items'
 
 export default function ExerciseList({ items, type, max, className = '' }) {
+  if (!items?.length) return null
   const shown = max ? items.slice(0, max) : items
   const hidden = items.length - shown.length
 

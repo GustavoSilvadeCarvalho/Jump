@@ -24,14 +24,18 @@ function WorkoutRow({ workout, planName, onEdit, onDelete }) {
             {workout.rpe ? <span className="tnum text-xs text-ink-3">RPE {workout.rpe}</span> : null}
           </div>
 
-          <button
-            onClick={() => setExpanded((v) => !v)}
-            aria-expanded={expanded}
-            className="mt-2 block text-left text-sm text-ink transition hover:text-accent"
-          >
-            {workout.items.length} exercício{workout.items.length > 1 ? 's' : ''}
-            <span className="ml-1.5 text-ink-3">· {workout.items.map((i) => i.name).join(', ')}</span>
-          </button>
+          {workout.items.length === 0 ? (
+            workout.notes && <p className="mt-2 text-sm text-ink-2">{workout.notes}</p>
+          ) : (
+            <button
+              onClick={() => setExpanded((v) => !v)}
+              aria-expanded={expanded}
+              className="mt-2 block text-left text-sm text-ink transition hover:text-accent"
+            >
+              {workout.items.length} exercício{workout.items.length > 1 ? 's' : ''}
+              <span className="ml-1.5 text-ink-3">· {workout.items.map((i) => i.name).join(', ')}</span>
+            </button>
+          )}
 
           {expanded && (
             <div className="mt-3 border-l-2 border-line pl-4">
