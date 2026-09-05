@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CATEGORIES, CATEGORY_KEYS, JUMP_KINDS } from '../lib/data'
+import { CATEGORIES, CATEGORY_KEYS, JUMP_KINDS, isGame } from '../lib/data'
 import { WEEKDAYS, dayMonth, longDate, relative, today, weekday } from '../lib/dates'
 import { nextSession, totalSets, weekSummary } from '../lib/schedule'
 import {
@@ -167,6 +167,7 @@ export default function Dashboard({ store, onNavigate, onStart }) {
   const week = weekSummary(plans, workouts, t)
   const hoje = week.days[weekday(t)]
   const pendingToday = hoje.planned.filter((p) => !p.done)
+  const jogouHoje = hoje.done.some((w) => isGame(w.type))
   const next = nextSession(plans, workouts, t)
   const nextOtherDay = next && next.iso !== t ? next : null
 
@@ -233,9 +234,7 @@ export default function Dashboard({ store, onNavigate, onStart }) {
             <p className="text-sm text-ink-2">
               {plans.length === 0
                 ? 'Você ainda não tem fichas — monte uma pra saber o que treinar em cada dia.'
-                : nextOtherDay
-                  ? 'Nenhuma ficha marcada pra hoje. Descanso conta como treino.'
-                  : 'Nenhuma ficha marcada pra hoje.'}
+                : 'Nenhuma ficha marcada pra hoje. Descanso conta como treino, e dia de jogo segura a sequência.'}
             </p>
             {nextOtherDay && (
               <button
@@ -262,6 +261,15 @@ export default function Dashboard({ store, onNavigate, onStart }) {
               )}
             </div>
           </Card>
+        )}
+
+        {!jogouHoje && (
+          <button
+            onClick={() => setDraft({ date: t, type: 'jogo', items: [] })}
+            className="w-full rounded-xl border border-dashed border-line py-3 text-sm font-medium text-ink-2 transition hover:border-ink-3 hover:text-ink"
+          >
+            Joguei hoje
+          </button>
         )}
 
         {pendingToday.length > 0 && nextOtherDay && (
@@ -363,7 +371,7 @@ export default function Dashboard({ store, onNavigate, onStart }) {
               >
                 <Badge color={CATEGORIES[w.type].color}>{CATEGORIES[w.type].label}</Badge>
                 <span className="min-w-0 flex-1 truncate text-sm text-ink">
-                  {w.items.map((i) => i.name).join(', ')}
+                  {w.items.length ? w.items.map((i) => i.name).join(', ') : w.notes || '—'}
                 </span>
                 <span className="shrink-0 text-xs text-ink-3">{relative(w.date)}</span>
               </button>

@@ -193,7 +193,9 @@ try {
 
   console.log('\n6. Alcance parado é por conta')
   A.state.reach = 240
-  A.state.reachUpdatedAt = agora()
+  // Carimbo no passado de propósito: simula aparelho com o relógio atrasado em
+  // relação ao banco. A linha vazia de preferências não pode vencer dele.
+  A.state.reachUpdatedAt = new Date(Date.now() - 3600_000).toISOString()
   A.state.dirty.reach = true
   await sincronizar(A)
   await sincronizar(B)

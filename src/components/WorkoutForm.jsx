@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CATEGORIES, CATEGORY_KEYS } from '../lib/data'
+import { CATEGORIES, CATEGORY_KEYS, isGame } from '../lib/data'
 import { today } from '../lib/dates'
 import { isHoldType, toFormItems, toStoredItems } from '../lib/items'
 import ExerciseRows from './ExerciseRows'
@@ -23,7 +23,8 @@ export default function WorkoutForm({ initial, plans = [], onSubmit, onClose }) 
     setItems(toFormItems(plan.items, plan.type))
   }
 
-  const valid = items.some((i) => i.name.trim())
+  const jogo = isGame(type)
+  const valid = jogo || items.some((i) => i.name.trim())
 
   const submit = (e) => {
     e.preventDefault()
@@ -31,11 +32,11 @@ export default function WorkoutForm({ initial, plans = [], onSubmit, onClose }) 
     onSubmit({
       date,
       type,
-      planId: planId || null,
+      planId: jogo ? null : planId || null,
       duration: duration === '' ? null : Number(duration),
       rpe: Number(rpe),
       notes: notes.trim(),
-      items: toStoredItems(items),
+      items: jogo ? [] : toStoredItems(items),
     })
     onClose()
   }
@@ -66,7 +67,7 @@ export default function WorkoutForm({ initial, plans = [], onSubmit, onClose }) 
         </Field>
       </div>
 
-      {plans.length > 0 && (
+      {plans.length > 0 && !jogo && (
         <Field label="Ficha" hint="Carrega os exercícios da ficha — dá pra ajustar depois de escolher.">
           <Select value={planId} onChange={(e) => pickPlan(e.target.value)}>
             <option value="">Treino avulso</option>
@@ -79,7 +80,7 @@ export default function WorkoutForm({ initial, plans = [], onSubmit, onClose }) 
         </Field>
       )}
 
-      <ExerciseRows type={type} items={items} setItems={setItems} />
+      {!jogo && <ExerciseRows type={type} items={items} setItems={setItems} />}
 
       <Field label={'Esforço percebido: ' + rpe + '/10'} hint="1 é leve, 10 é o máximo que você aguenta">
         <input
@@ -97,7 +98,13 @@ export default function WorkoutForm({ initial, plans = [], onSubmit, onClose }) 
           rows={2}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder={isHoldType(type) ? 'Quadril ainda travado do lado direito' : 'Joelho incomodou no terceiro set'}
+          placeholder={
+            jogo
+              ? 'Duas horas de quadra, muito salto'
+              : isHoldType(type)
+                ? 'Quadril ainda travado do lado direito'
+                : 'Joelho incomodou no terceiro set'
+          }
         />
       </Field>
 
