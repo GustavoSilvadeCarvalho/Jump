@@ -30,6 +30,7 @@ Tudo separado por categoria — **pliometria**, **força**, **alongamento**, **m
   minimizar e voltar depois — a barra "em andamento" fica esperando.
 - **Jogo** — dia em que você trocou o treino por uma partida entra como categoria
   própria, sem exercícios: um toque em "Joguei hoje" e a sequência de dias não zera.
+  No calendário dá pra marcar um dia que já passou, tocando nele.
 - **Treinos** — histórico das sessões feitas, com duração e esforço percebido (RPE);
   filtrar por categoria, editar e apagar.
 - **Impulsão** — registrar saltos por tipo (CMJ, squat jump, com corrida, unilateral),

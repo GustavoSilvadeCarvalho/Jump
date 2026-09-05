@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
-import { CATEGORIES } from '../lib/data'
+import { CATEGORIES, isGame } from '../lib/data'
 import { WEEKDAYS, fromISO, longDate, monthGrid, monthLabel, today } from '../lib/dates'
 import { dayAgenda, planToDraft, workoutsByDate } from '../lib/schedule'
 import ExerciseList from './ExerciseList'
@@ -165,6 +165,7 @@ export default function Calendar({ store, initialDate, onStart }) {
   const agenda = dayAgenda(selected, plans, byDate)
   const isFuture = selected > today()
   const pendingPlans = agenda.planned.filter((p) => !p.done)
+  const jogouNoDia = agenda.done.some((w) => isGame(w.type))
 
   return (
     <div className="space-y-6">
@@ -273,6 +274,15 @@ export default function Calendar({ store, initialDate, onStart }) {
               }
             />
           ))}
+
+          {!isFuture && !jogouNoDia && (
+            <button
+              onClick={() => setDraft({ date: selected, type: 'jogo', items: [] })}
+              className="w-full rounded-xl border border-dashed border-line py-3 text-sm font-medium text-ink-2 transition hover:border-ink-3 hover:text-ink"
+            >
+              {selected === today() ? 'Joguei hoje' : 'Joguei nesse dia'}
+            </button>
+          )}
 
           {agenda.done.length === 0 && pendingPlans.length === 0 && (
             <div className="rounded-xl border border-dashed border-line px-4 py-8 text-center">
